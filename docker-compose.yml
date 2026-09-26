@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: ./services/api
+    container_name: crypto-api
+    command: ["python", "-m", "app.main"]
+
+  data-collector:
+    build:
+      context: ./services/data_collector
+    container_name: crypto-data-collector
+    command: ["python", "-m", "app.main"]
+
+  arbitrage-engine:
+    build:
+      context: ./services/arbitrage_engine
+    container_name: crypto-arbitrage-engine
+    command: ["python", "-m", "app.main"]
+
+  ml-service:
+    build:
+      context: ./services/ml_service
+    container_name: crypto-ml-service
+    command: ["python", "-m", "app.main"]
+
+  simulation-engine:
+    build:
+      context: ./services/simulation_engine
+    container_name: crypto-simulation-engine
+    command: ["python", "-m", "app.main"]
+
+  dashboard:
+    build:
+      context: ./services/dashboard
+    container_name: crypto-dashboard
