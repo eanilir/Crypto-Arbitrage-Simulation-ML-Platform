@@ -7,6 +7,7 @@ name = "crypto-arbitrage-simulation-ml-platform"
 version = "0.1.0"
 description = "Service-based crypto arbitrage simulation and ML platform"
 requires-python = ">=3.11"
+dependencies = ["websockets>=12"]
 
 [tool.ruff]
 line-length = 100
