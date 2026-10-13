@@ -12,14 +12,28 @@ import streamlit as st
 # Make `shared` importable no matter where streamlit is launched from.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.domain.models import MarketQuote, SpreadOpportunity  # noqa: E402
+from services.arbitrage_engine.app.candidates import (  # noqa: E402
+    Candidate,
+    CandidateStatus,
+    CostModel,
+    OrderBook,
+    find_candidates,
+    rank_by_net_profit,
+)
+from shared.domain.models import MarketQuote  # noqa: E402
 
-EXCHANGES = ["Binance", "Kraken", "Coinbase", "OKX"]
+EXCHANGES = ["Binance", "Bybit", "Kraken", "Coinbase", "OKX"]
 BASE_PRICES = {"BTC/USDT": 65000.0, "ETH/USDT": 3200.0, "SOL/USDT": 150.0}
 
 # Default public spot taker fees (%) of each exchange's entry fee tier.
 # Your real fee depends on your account's volume tier / fee-token discounts: edit in the sidebar.
-DEFAULT_TAKER_FEE_PCT = {"Binance": 0.10, "Kraken": 0.40, "Coinbase": 0.60, "OKX": 0.10}
+DEFAULT_TAKER_FEE_PCT = {
+    "Binance": 0.10,
+    "Bybit": 0.10,
+    "Kraken": 0.40,
+    "Coinbase": 0.60,
+    "OKX": 0.10,
+}
 
 Level = tuple[float, float]  # (price, base quantity)
 Book = tuple[list[Level], list[Level]]  # (bids best-first, asks best-first)
@@ -40,6 +54,18 @@ def _fetch_book(exchange: str, symbol: str) -> Book:
         r.raise_for_status()
         d = r.json()
         return _levels(d["bids"]), _levels(d["asks"])
+    if exchange == "Bybit":
+        r = requests.get(
+            "https://api.bybit.com/v5/market/orderbook",
+            params={"category": "spot", "symbol": base + quote, "limit": 50},
+            timeout=5,
+        )
+        r.raise_for_status()
+        body = r.json()
+        if body.get("retCode") != 0:
+            raise RuntimeError(body.get("retMsg"))
+        d = body["result"]
+        return _levels(d["b"]), _levels(d["a"])
     if exchange == "Kraken":
         kraken_base = "XBT" if base == "BTC" else base
         r = requests.get(
@@ -104,18 +130,6 @@ def simulate_books(
     return books
 
 
-def walk(levels: list[Level], base_qty: float) -> float | None:
-    """Quote-currency value of filling `base_qty` through `levels`; None if too shallow."""
-    remaining, value = base_qty, 0.0
-    for price, qty in levels:
-        take = min(remaining, qty)
-        value += take * price
-        remaining -= take
-        if remaining <= 1e-12:
-            return value
-    return None
-
-
 def to_quotes(books: dict[tuple[str, str], Book]) -> list[MarketQuote]:
     now = datetime.now(timezone.utc)
     return [
@@ -130,37 +144,17 @@ def find_opportunities(
     notional: float,
     fees_pct: dict[str, float],
     latency_bps: float,
-) -> list[SpreadOpportunity]:
-    found = []
+) -> list[Candidate]:
+    """All cross-exchange candidates (incl. unprofitable/rejected), best net profit first."""
     now = datetime.now(timezone.utc)
-    for (buy_ex, symbol), (_, buy_asks) in books.items():
-        for (sell_ex, sell_symbol), (sell_bids, _) in books.items():
-            if sell_symbol != symbol or sell_ex == buy_ex or not buy_asks or not sell_bids:
-                continue
-            qty = notional / buy_asks[0][0]
-            cost = walk(buy_asks, qty)
-            proceeds = walk(sell_bids, qty)
-            if cost is None or proceeds is None:
-                continue  # order book too shallow for this trade size
-            top_cost, top_proceeds = qty * buy_asks[0][0], qty * sell_bids[0][0]
-            fees = cost * fees_pct[buy_ex] / 100 + proceeds * fees_pct[sell_ex] / 100
-            slippage = (cost - top_cost) + (top_proceeds - proceeds)
-            latency = cost * latency_bps / 10_000
-            found.append(
-                SpreadOpportunity(
-                    symbol=symbol,
-                    buy_exchange=buy_ex,
-                    sell_exchange=sell_ex,
-                    spread=top_proceeds - top_cost,
-                    spread_percent=(top_proceeds - top_cost) / top_cost * 100,
-                    estimated_fees=fees,
-                    estimated_slippage=slippage,
-                    estimated_latency_cost=latency,
-                    net_profit=proceeds - cost - fees - latency,
-                    detected_at=now,
-                )
-            )
-    return sorted(found, key=lambda o: o.net_profit, reverse=True)
+    order_books = [
+        OrderBook(ex, sym, tuple(bids), tuple(asks), received_at=now)
+        for (ex, sym), (bids, asks) in books.items()
+    ]
+    model = CostModel(
+        fee_rates={ex: pct / 100 for ex, pct in fees_pct.items()}, latency_bps=latency_bps
+    )
+    return rank_by_net_profit(find_candidates(order_books, notional, model, decision_time=now))
 
 
 st.set_page_config(page_title="Crypto Arbitrage Simulation", layout="wide")
@@ -205,16 +199,22 @@ if not opps:
     st.error("Need order books from at least two exchanges for the same symbol.")
     st.stop()
 
-best = opps[0]
-profitable = [o for o in opps if o.net_profit > 0]
-c1, c2, c3 = st.columns(3)
-c1.metric("Opportunities scanned", len(opps))
-c2.metric("Profitable after costs", len(profitable))
-c3.metric(
-    "Best net profit",
-    f"{best.net_profit:,.2f} USDT",
-    f"{best.symbol}: {best.buy_exchange} → {best.sell_exchange}",
-)
+priced = [o for o in opps if not o.is_rejected]
+profitable = [o for o in opps if o.is_net_profitable]
+gross_positive = [o for o in opps if o.gross_spread is not None and o.gross_spread > 0]
+rejected = [o for o in opps if o.is_rejected]
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Candidates scanned", len(opps))
+c2.metric("Gross-positive", len(gross_positive))
+c3.metric("Net-profitable after costs", len(profitable))
+c4.metric("Rejected (depth/data)", len(rejected))
+if priced:
+    best = priced[0]
+    st.metric(
+        "Best net profit (simulated)",
+        f"{best.net_profit:,.2f} USDT",
+        f"{best.symbol}: {best.buy_exchange} → {best.sell_exchange}",
+    )
 
 st.subheader("Top of book")
 st.dataframe(
@@ -232,9 +232,12 @@ if not shown:
     st.info("No profitable routes right now. Untick the filter to see all scanned routes.")
     st.stop()
 
-opp_df = pd.DataFrame([vars(o) for o in shown]).drop(columns=["detected_at"])
+opp_df = pd.DataFrame([o.to_dict() for o in shown]).drop(columns=["decision_time"])
 st.dataframe(opp_df, use_container_width=True, hide_index=True)
 
-st.subheader("Net profit by route")
-chart_df = opp_df.assign(route=opp_df.buy_exchange + " → " + opp_df.sell_exchange)
-st.bar_chart(chart_df.pivot_table(index="route", columns="symbol", values="net_profit"))
+priced_df = opp_df.dropna(subset=["net_profit"])
+if not priced_df.empty:
+    st.subheader("Net profit by route")
+    chart_df = priced_df.assign(route=priced_df.buy_exchange + " → " + priced_df.sell_exchange)
+    st.bar_chart(chart_df.pivot_table(index="route", columns="symbol", values="net_profit"))
+st.caption("All values are simulated analysis, not real trading performance.")

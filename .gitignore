@@ -13,3 +13,6 @@ data/processed/*
 !data/processed/.gitkeep
 models/*
 !models/.gitkeep
+
+# API-submitted backtest runs (generated)
+experiments/results/api_backtests/

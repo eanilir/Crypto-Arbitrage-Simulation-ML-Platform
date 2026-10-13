@@ -1,35 +1,231 @@
+# Local platform (project_plan.md §22). Simulation and research only: nothing here places orders.
+#
+#   cp .env.example .env        # then set every password below
+#   docker compose up -d --build                      # collector, api, dashboard
+#   docker compose --profile storage up -d            # + PostgreSQL, InfluxDB, Redis, Grafana
+#   docker compose --profile research run --rm research
+#
+# Service boundaries are combined where the plan allows it: the arbitrage engine, ML service and
+# simulation engine are libraries used by the API (backtests) and by the `research` job, not
+# separate long-running daemons. PostgreSQL / InfluxDB / Redis are provisioned in the `storage`
+# profile; the application still persists market data to NDJSON files on the `rawdata` volume.
+name: crypto-arbitrage
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
-  api:
-    build:
-      context: ./services/api
-    container_name: crypto-api
-    command: ["python", "-m", "app.main"]
-
   data-collector:
+    <<: [*restart, *logging]
     build:
-      context: ./services/data_collector
+      context: .
+      args:
+        REQUIREMENTS: collector
     container_name: crypto-data-collector
-    command: ["python", "-m", "app.main"]
+    command:
+      - python
+      - -m
+      - services.data_collector.app.depth_recorder
+      - --output-dir
+      - /app/data/raw/live
+      - --interval
+      - "${COLLECTOR_INTERVAL:-1.0}"
+      - --symbols
+      - "${COLLECTOR_SYMBOLS:-BTC/USDT}"
+    environment:
+      COLLECTOR_STATS: /app/data/raw/live/collector_stats.json
+    volumes:
+      - rawdata:/app/data/raw
+    healthcheck:
+      test: ["CMD", "python", "scripts/healthcheck_collector.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    stop_grace_period: 20s
+    networks: [edge]
 
-  arbitrage-engine:
+  api:
+    <<: [*restart, *logging]
     build:
-      context: ./services/arbitrage_engine
-    container_name: crypto-arbitrage-engine
-    command: ["python", "-m", "app.main"]
-
-  ml-service:
-    build:
-      context: ./services/ml_service
-    container_name: crypto-ml-service
-    command: ["python", "-m", "app.main"]
-
-  simulation-engine:
-    build:
-      context: ./services/simulation_engine
-    container_name: crypto-simulation-engine
-    command: ["python", "-m", "app.main"]
+      context: .
+      args:
+        REQUIREMENTS: api
+    container_name: crypto-api
+    command: ["python", "-m", "services.api.app.main"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ARBITRAGE_DATA_ROOT: /app/data/raw
+      ARBITRAGE_DATA_SOURCE: live
+      ARBITRAGE_MODELS_DIR: /app/models
+      ARBITRAGE_BACKTEST_DIR: /app/experiments/results/api_backtests
+    volumes:
+      - rawdata:/app/data/raw:ro
+      - models:/app/models
+      - results:/app/experiments/results
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [edge, backend]
 
   dashboard:
+    <<: [*restart, *logging]
     build:
-      context: ./services/dashboard
+      context: .
+      args:
+        REQUIREMENTS: dashboard
     container_name: crypto-dashboard
+    command:
+      - streamlit
+      - run
+      - services/dashboard/app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+      - --server.headless=true
+    environment:
+      ARBITRAGE_DATA_ROOT: /app/data/raw
+      ARBITRAGE_BACKTEST_DIR: /app/experiments/results/api_backtests
+      ARBITRAGE_RESULTS_DIR: /app/experiments/results
+    volumes:
+      - rawdata:/app/data/raw:ro
+      - results:/app/experiments/results:ro
+    ports:
+      - "127.0.0.1:8501:8501"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks: [edge]
+
+  research:
+    profiles: [research]
+    build:
+      context: .
+      args:
+        REQUIREMENTS: research
+    command:
+      - python
+      - experiments/run_experiments.py
+      - --input
+      - /app/data/raw/live
+      - --output
+      - /app/experiments/results/live
+    volumes:
+      - rawdata:/app/data/raw:ro
+      - results:/app/experiments/results
+      - models:/app/models
+    networks: [backend]
+
+  postgres:
+    <<: [*restart, *logging]
+    profiles: [storage]
+    image: postgres:16-alpine
+    container_name: crypto-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [backend]
+
+  influxdb:
+    <<: [*restart, *logging]
+    profiles: [storage]
+    image: influxdb:2.7
+    container_name: crypto-influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER:?set INFLUXDB_USER in .env}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:?set INFLUXDB_PASSWORD in .env}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-arbitrage}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-market_data}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:?set INFLUXDB_TOKEN in .env}
+      DOCKER_INFLUXDB_INIT_RETENTION: 7d
+    volumes:
+      - influxdata:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [backend]
+
+  redis:
+    <<: [*restart, *logging]
+    profiles: [storage]
+    image: redis:7-alpine
+    container_name: crypto-redis
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    networks: [backend]
+
+  grafana:
+    <<: [*restart, *logging]
+    profiles: [storage]
+    image: grafana/grafana-oss:11.1.0
+    container_name: crypto-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [edge, backend]
+
+networks:
+  edge: {}
+  backend:
+    internal: true # databases and internal jobs have no route to the internet or the host
+
+volumes:
+  rawdata:
+  models:
+  results:
+  pgdata:
+  influxdata:
+  redisdata:
+  grafanadata:

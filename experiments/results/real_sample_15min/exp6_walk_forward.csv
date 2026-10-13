@@ -1,0 +1,4 @@
+fold,test_rows,test_positives,C_cost_aware_pnl,ml_logistic_regression_pnl,ml_gradient_boosting_pnl,note
+1,1096,0,0.0,,,only 0 positive training labels (< 30)
+2,1100,0,0.0,,,only 0 positive training labels (< 30)
+3,1088,0,0.0,,,only 0 positive training labels (< 30)

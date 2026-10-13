@@ -1,0 +1,4 @@
+selector,candidates,selected,precision,recall,f1,pr_auc,candidate_level_net_pnl,trades,backtest_net_pnl,backtest_gross_pnl,backtest_fees,pct_profitable_trades,max_drawdown,skipped_inventory
+A_gross_spread,866,420,0.0,,,,-8028.803515231648,141,-2752.7604217900844,67.32561803046156,2820.086039820546,0.0,2752.7604217900844,0
+B_fee_aware,866,0,,,,,0.0,0,0.0,0.0,0.0,,0.0,0
+C_cost_aware,866,0,,,,,0.0,0,0.0,0.0,0.0,,0.0,0

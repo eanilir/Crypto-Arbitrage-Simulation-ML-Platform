@@ -1469,28 +1469,30 @@ Development will proceed incrementally. The order below defines the main depende
 
 Tasks:
 
-- [ ] Confirm the repository structure.
-- [ ] Configure the Python environment.
-- [ ] Add or review `.gitignore`.
-- [ ] Add `.env.example`.
-- [ ] Establish dependency management.
-- [ ] Establish logging and configuration conventions.
-- [ ] Add an initial README.
-- [ ] Review the existing code before restructuring.
+- [x] Confirm the repository structure.
+- [x] Configure the Python environment.
+- [x] Add or review `.gitignore`.
+- [x] Add `.env.example`.
+- [x] Establish dependency management.
+- [x] Establish logging and configuration conventions.
+- [x] Add an initial README.
+- [x] Review the existing code before restructuring.
 
 **Completion criteria:** The project can be set up locally using documented instructions, and secrets and generated data are excluded from version control.
 
 ### Phase 1 — Market Data Contract and Collector Pilot
 
+_Implementation note: the collector (`services/data_collector/app/depth_recorder.py`) polls REST depth snapshots; WebSocket depth, historical-source research and the 3–7 day run are still open (see `docs/data.md`)._
+
 Tasks:
 
-- [ ] Define the normalized market-data schema.
+- [x] Define the normalized market-data schema.
 - [ ] Verify public REST and WebSocket interfaces.
-- [ ] Implement the BTC/USDT collector.
-- [ ] Capture bid/ask prices and quantities.
-- [ ] Record exchange event and local receive timestamps.
-- [ ] Add reconnect and error handling.
-- [ ] Validate incoming data.
+- [x] Implement the BTC/USDT collector.
+- [x] Capture bid/ask prices and quantities.
+- [x] Record exchange event and local receive timestamps.
+- [x] Add reconnect and error handling.
+- [x] Validate incoming data.
 - [x] Run a short controlled BTC/USDT pilot; schedule the 3–7 day production run.
 - [x] Measure message frequency, gaps, storage, and data quality for the short pilot.
 - [ ] Document available historical data sources and limitations.
@@ -1501,16 +1503,18 @@ The short pilot results and its limitations are documented in `docs/btc_usdt_pil
 
 ### Phase 2 — Storage and Data Quality
 
+_Implementation note: market data is stored as NDJSON files; PostgreSQL/InfluxDB/Redis schema and containers exist but no application code writes to them yet. The restart test covers the recorder only._
+
 Tasks:
 
 - [ ] Set up InfluxDB for appropriate time-series data.
 - [ ] Set up PostgreSQL for structured research and application records.
 - [ ] Set up Redis for latest values and caching where needed.
 - [ ] Persist normalized market data.
-- [ ] Define retention and cleanup policies.
-- [ ] Add data-quality metrics.
-- [ ] Test restart and recovery behavior.
-- [ ] Verify timestamp consistency.
+- [x] Define retention and cleanup policies.
+- [x] Add data-quality metrics.
+- [x] Test restart and recovery behavior.
+- [x] Verify timestamp consistency.
 
 **Completion criteria:** Market observations can be stored and retrieved consistently, with documented data-quality behavior.
 
@@ -1518,16 +1522,16 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement cross-exchange candidate detection.
-- [ ] Implement order-book walking.
-- [ ] Implement gross spread calculations.
-- [ ] Implement configurable transaction fees.
-- [ ] Implement slippage estimation.
-- [ ] Implement the documented latency-cost approximation.
-- [ ] Calculate estimated net profit.
-- [ ] Distinguish candidates from net-profitable candidates.
-- [ ] Permit valid negative spread values.
-- [ ] Add tests for negative spread, positive gross but negative net profit, and insufficient depth.
+- [x] Implement cross-exchange candidate detection.
+- [x] Implement order-book walking.
+- [x] Implement gross spread calculations.
+- [x] Implement configurable transaction fees.
+- [x] Implement slippage estimation.
+- [x] Implement the documented latency-cost approximation.
+- [x] Calculate estimated net profit.
+- [x] Distinguish candidates from net-profitable candidates.
+- [x] Permit valid negative spread values.
+- [x] Add tests for negative spread, positive gross but negative net profit, and insufficient depth.
 
 **Completion criteria:** Candidate and cost calculations pass unit tests and use consistent definitions.
 
@@ -1535,16 +1539,16 @@ Tasks:
 
 Tasks:
 
-- [ ] Define the unit of observation.
-- [ ] Define the simulated outcome horizon and execution assumptions.
-- [ ] Define the binary target label.
-- [ ] Build the initial feature pipeline.
-- [ ] Include both profitable and unprofitable candidates.
-- [ ] Include non-opportunity periods where useful.
-- [ ] Validate timestamp ordering.
-- [ ] Check for future-data leakage.
-- [ ] Create reproducible dataset-generation scripts.
-- [ ] Document dataset coverage and limitations.
+- [x] Define the unit of observation.
+- [x] Define the simulated outcome horizon and execution assumptions.
+- [x] Define the binary target label.
+- [x] Build the initial feature pipeline.
+- [x] Include both profitable and unprofitable candidates.
+- [x] Include non-opportunity periods where useful.
+- [x] Validate timestamp ordering.
+- [x] Check for future-data leakage.
+- [x] Create reproducible dataset-generation scripts.
+- [x] Document dataset coverage and limitations.
 
 **Completion criteria:** A reproducible dataset can be generated, and its features and labels have clear, testable definitions.
 
@@ -1552,12 +1556,12 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement the gross-spread baseline.
-- [ ] Implement the fee-aware baseline.
-- [ ] Implement the cost-aware baseline.
-- [ ] Define common candidate and execution assumptions.
-- [ ] Generate baseline evaluation reports.
-- [ ] Verify that all methods use comparable data.
+- [x] Implement the gross-spread baseline.
+- [x] Implement the fee-aware baseline.
+- [x] Implement the cost-aware baseline.
+- [x] Define common candidate and execution assumptions.
+- [x] Generate baseline evaluation reports.
+- [x] Verify that all methods use comparable data.
 
 **Completion criteria:** The project can evaluate candidates without ML and produce a reproducible baseline report.
 
@@ -1565,15 +1569,15 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement chronological market-data replay.
-- [ ] Implement simulated candidate selection.
-- [ ] Apply fees and documented cost assumptions.
-- [ ] Apply supported latency and staleness scenarios.
-- [ ] Implement the virtual portfolio.
-- [ ] Calculate net simulated P&L.
-- [ ] Record simulated decisions and trades.
-- [ ] Save backtest configurations and results.
-- [ ] Test chronological correctness and reproducibility.
+- [x] Implement chronological market-data replay.
+- [x] Implement simulated candidate selection.
+- [x] Apply fees and documented cost assumptions.
+- [x] Apply supported latency and staleness scenarios.
+- [x] Implement the virtual portfolio.
+- [x] Calculate net simulated P&L.
+- [x] Record simulated decisions and trades.
+- [x] Save backtest configurations and results.
+- [x] Test chronological correctness and reproducibility.
 
 **Completion criteria:** Rule-based methods can be evaluated through a repeatable simulation pipeline.
 
@@ -1581,20 +1585,22 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement Logistic Regression.
-- [ ] Implement Random Forest.
-- [ ] Implement Gradient Boosting.
-- [ ] Define chronological training, validation, and test periods.
-- [ ] Tune models using training and validation data only.
-- [ ] Evaluate classification metrics.
-- [ ] Evaluate simulated performance using the same simulation policy.
-- [ ] Compare ML against all rule-based baselines.
-- [ ] Save model versions and experiment metadata.
+- [x] Implement Logistic Regression.
+- [x] Implement Random Forest.
+- [x] Implement Gradient Boosting.
+- [x] Define chronological training, validation, and test periods.
+- [x] Tune models using training and validation data only.
+- [x] Evaluate classification metrics.
+- [x] Evaluate simulated performance using the same simulation policy.
+- [x] Compare ML against all rule-based baselines.
+- [x] Save model versions and experiment metadata.
 - [ ] Document cases where ML does not improve results.
 
 **Completion criteria:** Model performance and simulated outcomes can be compared fairly with rule-based methods, without data leakage.
 
 ### Phase 8 — Research Experiments and Reporting
+
+_Implementation note: `experiments/run_experiments.py` implements experiments 1–6. Only synthetic data and a 15-minute real sample have been run, so no research conclusion exists yet; the literature review is pending (`docs/literature_review.md`)._
 
 Tasks:
 
@@ -1604,7 +1610,7 @@ Tasks:
 - [ ] Compare rule-based and ML-filtered results.
 - [ ] Run feature-ablation experiments where sufficient data exists.
 - [ ] Evaluate across chronological periods.
-- [ ] Produce tables and plots.
+- [x] Produce tables and plots.
 - [ ] Document assumptions, limitations, and results.
 - [ ] Complete the literature review before making novelty claims.
 
@@ -1614,19 +1620,21 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement health and status endpoints.
-- [ ] Implement market-data endpoints.
-- [ ] Implement opportunity endpoints.
-- [ ] Implement prediction endpoints.
-- [ ] Implement portfolio and performance endpoints.
-- [ ] Add backtest submission and result retrieval.
-- [ ] Connect the dashboard to the relevant data sources.
-- [ ] Display simulated values clearly.
-- [ ] Add integration tests.
+- [x] Implement health and status endpoints.
+- [x] Implement market-data endpoints.
+- [x] Implement opportunity endpoints.
+- [x] Implement prediction endpoints.
+- [x] Implement portfolio and performance endpoints.
+- [x] Add backtest submission and result retrieval.
+- [x] Connect the dashboard to the relevant data sources.
+- [x] Display simulated values clearly.
+- [x] Add integration tests.
 
 **Completion criteria:** The system exposes its results through a documented API and a usable monitoring dashboard.
 
 ### Phase 10 — Docker Integration and Hardening
+
+_Implementation note: `Dockerfile`, `docker-compose.yml`, health checks and persistent volumes are written and statically tested (`tests/test_infrastructure.py`) but were never built or run because Docker is not installed on the development machine; their boxes stay unchecked until they are._
 
 Tasks:
 
@@ -1636,13 +1644,15 @@ Tasks:
 - [ ] Add persistent storage.
 - [ ] Verify service-to-service communication.
 - [ ] Verify startup, shutdown, and restart behavior.
-- [ ] Run unit and integration tests.
-- [ ] Review security and dependency configuration.
-- [ ] Document the complete local startup workflow.
+- [x] Run unit and integration tests.
+- [x] Review security and dependency configuration.
+- [x] Document the complete local startup workflow.
 
 **Completion criteria:** The local platform can be started, tested, and operated using documented container workflows.
 
 ### Phase 11 — AWS Preparation and Deployment
+
+_Implementation note: preparation documented in `docs/aws_deployment_plan.md`; nothing was deployed and no costs were estimated with real prices._
 
 AWS deployment should happen after the local system works reliably and the expected costs are understood.
 
@@ -1659,7 +1669,7 @@ Potential services:
 
 Tasks:
 
-- [ ] Select a deployment architecture based on actual requirements.
+- [x] Select a deployment architecture based on actual requirements.
 - [ ] Estimate ongoing and variable costs.
 - [ ] Configure billing alerts and budgets.
 - [ ] Configure IAM and network security.
@@ -1668,7 +1678,7 @@ Tasks:
 - [ ] Deploy a minimal environment first.
 - [ ] Verify health checks, logs, and recovery behavior.
 - [ ] Confirm that resources can be stopped or deleted safely.
-- [ ] Document deployment and cleanup procedures.
+- [x] Document deployment and cleanup procedures.
 
 **Completion criteria:** The application can be deployed to AWS with documented security controls, cost assumptions, and cleanup steps.
 
