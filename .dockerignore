@@ -1,0 +1,16 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.env
+data/raw/*
+data/processed/*
+models/*
+experiments/results
+tests
+docs
+*.md

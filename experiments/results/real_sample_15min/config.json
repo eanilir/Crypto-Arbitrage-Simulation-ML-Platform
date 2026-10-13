@@ -1,0 +1,29 @@
+{
+  "experiment": {
+    "notional": 10000.0,
+    "fee_rate": 0.001,
+    "latency_bps": 0.0,
+    "latencies_ms": [
+      0,
+      50,
+      100,
+      250,
+      500
+    ],
+    "staleness_quantiles": [
+      0.5,
+      0.75,
+      0.9
+    ],
+    "ml_latency_ms": 250.0,
+    "cooldown_ticks": 2,
+    "n_folds": 3,
+    "seed": 42,
+    "min_train_positives": 30,
+    "initial_quote_per_exchange": 1000000.0
+  },
+  "input": "data\\raw\\real_sample",
+  "symbol": "BTC/USDT",
+  "ticks": 773,
+  "synthetic_data": false
+}
