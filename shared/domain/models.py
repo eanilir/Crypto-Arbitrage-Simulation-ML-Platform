@@ -8,7 +8,6 @@ import re
 from .errors import (
     InvalidOpportunityError,
     InvalidPriceError,
-    InvalidSpreadError,
     InvalidSymbolError,
 )
 from .time import normalize_timestamp
@@ -151,8 +150,6 @@ class SpreadOpportunity:
         object.__setattr__(
             self, "net_profit", _require_number(self.net_profit, "net_profit")
         )
-        if self.spread < 0 or self.spread_percent < 0:
-            raise InvalidSpreadError("spread values cannot be negative")
         object.__setattr__(self, "detected_at", normalize_timestamp(self.detected_at))
 
 
