@@ -172,6 +172,7 @@ with st.sidebar:
     symbols = st.multiselect("Symbols", list(BASE_PRICES), default=list(BASE_PRICES))
     notional = st.number_input("Trade size (USDT)", 100.0, 1_000_000.0, 10_000.0, 500.0)
     latency_bps = st.slider("Latency cost (bps)", 0.0, 20.0, 1.0, 0.5)
+    only_profitable = st.checkbox("Show only profitable routes", value=True)
     with st.expander("Taker fee per exchange (%)", expanded=True):
         fees_pct = {
             ex: st.number_input(ex, 0.0, 1.0, DEFAULT_TAKER_FEE_PCT[ex], 0.01, format="%.3f")
@@ -226,7 +227,12 @@ st.dataframe(
 )
 
 st.subheader(f"Opportunities for {notional:,.0f} USDT (ranked by net profit)")
-opp_df = pd.DataFrame([vars(o) for o in opps]).drop(columns=["detected_at"])
+shown = profitable if only_profitable else opps
+if not shown:
+    st.info("No profitable routes right now. Untick the filter to see all scanned routes.")
+    st.stop()
+
+opp_df = pd.DataFrame([vars(o) for o in shown]).drop(columns=["detected_at"])
 st.dataframe(opp_df, use_container_width=True, hide_index=True)
 
 st.subheader("Net profit by route")
