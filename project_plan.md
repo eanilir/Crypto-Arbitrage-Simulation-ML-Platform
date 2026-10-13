@@ -1,748 +1,1050 @@
-# # Crypto Arbitrage Simulation & ML Platform
+# Crypto Arbitrage Simulation & ML Platform
 
-## Project Development Plan
+## 1. Project Overview
 
-> **Project Type:** Simulation / Backtesting / Paper Trading
-> **Real Money:** No
-> **Real Trading:** No
-> **Architecture:** Containerized Service-Based Architecture
-> **Target Environment:** Local Docker → AWS Cloud
-> **Primary Language:** Python
+**Project Name:** Crypto Arbitrage Simulation & ML Platform
 
----
+**Project Type:** Simulation / Backtesting / Paper Trading
 
-# 1. Project Goal
+**Real Money:** No
 
-The goal of this project is to develop a **cloud-ready cryptocurrency arbitrage simulation and machine learning platform**.
+**Real Trading:** No
 
-The system will collect market data from multiple cryptocurrency exchanges, standardize the data, detect potential arbitrage opportunities, evaluate these opportunities using transaction fees, slippage and latency, and simulate trades without using real money.
+**Architecture:** Containerized Service-Based Architecture
 
-Machine learning models will be used to classify whether detected opportunities are potentially profitable or unprofitable.
+**Primary Language:** Python
 
-The complete system will be designed from the beginning with:
+**Initial Environment:** Local Development
 
-* Containerization
-* Service-based architecture
-* Cloud deployment
-* Security
-* Fault tolerance
-* Monitoring
-* Logging
-* Scalability
+**Container Environment:** Docker / Docker Compose
 
-in mind.
+**Future Deployment Target:** AWS Cloud
 
-The initial development environment will be local Docker. After the local system is stable and tested, the same architecture will be prepared for AWS deployment.
+**Project Status:** Under Development
+
+This project aims to develop a modular platform that collects cryptocurrency market data from multiple exchanges, identifies potential cross-exchange arbitrage opportunities, estimates transaction costs, evaluates opportunities using machine learning, and simulates trading outcomes without executing real trades.
+
+The platform will support reproducible experiments, historical backtesting, performance evaluation, and monitoring through a dashboard.
+
+The initial implementation will prioritize data quality, correct financial calculations, and a reliable simulation pipeline before expanding into cloud deployment and advanced experiments.
 
 ---
 
-# 2. Important Project Constraint
+## 2. Project Objectives
 
-## No Real Trading
+The main objectives are:
 
-This project is strictly a **simulation and research system**.
+- Collect public cryptocurrency market data from Binance, Bybit, and OKX.
+- Standardize market data into a common schema.
+- Monitor bid and ask prices across exchanges.
+- Identify potential cross-exchange arbitrage candidates.
+- Estimate fees, order-book slippage, data staleness, and simulated execution costs.
+- Build a rule-based baseline for evaluating candidate opportunities.
+- Create a labeled dataset for machine learning.
+- Train and evaluate classification models that estimate whether a candidate is likely to be profitable under defined simulation assumptions.
+- Compare ML-based filtering against rule-based baselines.
+- Simulate virtual trades and calculate net profit and loss.
+- Backtest the strategy using historical or replayed market data.
+- Store market data, opportunities, predictions, simulated trades, and experiment results.
+- Visualize system behavior and performance through Grafana.
+- Containerize the application and its supporting services.
+- Prepare the architecture for a later, cost-controlled AWS deployment.
 
-The system will NOT:
-
-* Execute real cryptocurrency trades
-* Use real trading permissions
-* Place real BUY/SELL orders
-* Manage real user funds
-* Require withdrawal permissions
-* Store real trading API credentials
-
-Market data may be collected from public exchange APIs/WebSockets.
-
-If exchange API keys are required for a future extension, they must never be hard-coded into the source code and must not contain real trading permissions for this project.
+The project must remain a simulation and research platform. It must not execute real trades or use real funds.
 
 ---
 
-# 3. High-Level Architecture
+## 3. Research Objective
+
+### 3.1 Research Question
+
+**How do market-data staleness and simulated execution latency affect the net profitability of cross-exchange cryptocurrency arbitrage, and can a machine-learning filter improve performance over a rule-based baseline?**
+
+Turkish interpretation:
+
+Piyasa verisinin eskiliği ve simüle edilen işlem gecikmesi, borsalar arası kripto arbitrajının maliyet sonrası kârlılığını nasıl etkiler ve makine öğrenmesi filtresi kural tabanlı bir yönteme kıyasla performansı artırabilir mi?
+
+### 3.2 Research Motivation
+
+A positive price difference between two exchanges does not necessarily represent a profitable arbitrage opportunity.
+
+Transaction fees, order-book depth, slippage, stale market data, and the delay between observing a price and hypothetically executing a trade can reduce or eliminate the apparent profit.
+
+This project will investigate these factors in a controlled simulation environment and determine whether an ML model can help filter out candidates that are unlikely to remain profitable after the modeled costs.
+
+The project must not assume that machine learning will outperform the rule-based baseline. That conclusion must be supported by experimental results.
+
+### 3.3 Research Scope
+
+The research will focus on:
+
+- Cross-exchange arbitrage candidates.
+- Bid and ask prices and available quantities.
+- Market-data age.
+- Simulated decision and execution delays.
+- Trading fees and estimated order-book slippage.
+- Net simulated profitability.
+- Rule-based versus ML-based opportunity filtering.
+
+A literature review must be completed before claiming that the research question is novel. The project may contribute an experimental comparison without claiming that the underlying idea has never been studied.
+
+---
+
+## 4. Project Scope and Limitations
+
+### Included
+
+- Public market-data collection.
+- Historical data retrieval where suitable data is available.
+- Live WebSocket data collection.
+- Market-data normalization and validation.
+- Cross-exchange candidate detection.
+- Fee and order-book cost estimation.
+- Dataset generation and feature engineering.
+- Rule-based baselines.
+- ML classification.
+- Virtual portfolio simulation.
+- Historical replay and backtesting.
+- Performance and experiment reporting.
+- API development.
+- Dashboard development.
+- Docker-based local deployment.
+- Security, testing, monitoring, and logging.
+- Future AWS deployment preparation.
+
+### Excluded
+
+- Real-money trading.
+- Real exchange order execution.
+- Deposits or withdrawals.
+- Exchange API permissions for trading.
+- Guaranteed-profit claims.
+- Claims that simulated execution perfectly reproduces real-world execution.
+- Unverified claims about actual exchange network latency.
+- Unnecessary cloud expenses during early development.
+
+---
+
+## 5. Initial Exchanges and Trading Pairs
+
+### Exchanges
+
+- Binance
+- Bybit
+- OKX
+
+### Initial Trading Pairs
+
+- BTC/USDT
+- ETH/USDT
+- XRP/USDT
+
+### Development Strategy
+
+The intended project scope includes all three exchanges and all three trading pairs. However, data collection and validation will begin with BTC/USDT.
+
+The initial pilot will test:
+
+- WebSocket connectivity.
+- Message frequency.
+- Timestamp quality.
+- Missing updates and data gaps.
+- Reconnection behavior.
+- Order-book consistency.
+- Storage growth.
+- Candidate detection reliability.
+
+ETH/USDT, XRP/USDT, and additional exchanges will be added after the initial pipeline is stable.
+
+---
+
+## 6. System Architecture
+
+The platform will use a modular, containerized, service-based architecture.
+
+### Main Components
+
+1. API Service
+2. Data Collector
+3. Arbitrage Engine
+4. ML Service
+5. Simulation and Backtesting Engine
+6. PostgreSQL
+7. InfluxDB
+8. Redis
+9. Grafana Dashboard
+
+### High-Level Architecture
 
 ```text
-                         ☁️ CLOUD
-                           │
-                     HTTPS / TLS
-                           │
-                    Load Balancer
-                           │
-                      FastAPI API
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
- Data Collector      Arbitrage Engine     ML Service
-        │                  │                  │
-        └──────────────────┼──────────────────┘
-                           │
-                           ▼
-                  Simulation Engine
-                           │
-             ┌─────────────┼─────────────┐
-             ▼             ▼             ▼
-           Redis       PostgreSQL      InfluxDB
-             │
-             └─────────────┐
-                           ▼
-                  Dashboard / Grafana
-
-
-                 🔐 SECURITY LAYER
-        ─────────────────────────────────
-        IAM / Least Privilege
-        HTTPS / TLS
-        Security Groups
-        Private Database
-        Secrets Management
-        API Authentication
-        Input Validation
-        Container Security
-        Logging
-        Monitoring
-        No Real Trading Permissions
+Binance WebSocket / REST
+Bybit WebSocket / REST
+OKX WebSocket / REST
+             |
+             v
+       Data Collector
+             |
+             v
+ Data Validation and Normalization
+             |
+       +-----+------+
+       |            |
+       v            v
+   InfluxDB      Redis
+       |
+       v
+   Arbitrage Engine
+       |
+       v
+ Candidate Opportunities
+       |
+       +----------------------+
+       |                      |
+       v                      v
+ Rule-Based Evaluation    Feature Pipeline
+                              |
+                              v
+                         ML Service
+                              |
+                              v
+                      Opportunity Filtering
+                              |
+                              v
+                   Simulation / Backtesting
+                              |
+                              v
+                          PostgreSQL
+                              |
+                              v
+                         FastAPI
+                              |
+                              v
+                      Grafana Dashboard
 ```
+
+This diagram describes the logical data flow. The exact service boundaries may evolve during implementation, but changes must preserve modularity and the separation between data collection, opportunity detection, ML inference, and simulation.
 
 ---
 
-# 4. Service Architecture
+## 7. Service Responsibilities
 
-The application will be divided into independent services.
+### 7.1 Data Collector
+
+Responsibilities:
+
+- Connect to supported public market-data endpoints.
+- Retrieve historical data through REST APIs where available.
+- Subscribe to live WebSocket market-data streams.
+- Collect best bid and ask prices.
+- Collect corresponding bid and ask quantities.
+- Collect limited order-book depth when required and supported.
+- Record exchange event timestamps.
+- Record local receive timestamps.
+- Normalize symbols and exchange identifiers.
+- Handle reconnects and temporary exchange failures.
+- Detect missing or out-of-order updates where possible.
+- Publish validated market data to downstream components.
+
+The collector must not require private trading credentials for public market-data access.
+
+### 7.2 Arbitrage Engine
+
+Responsibilities:
+
+- Read normalized order books.
+- Compare executable buy and sell prices across exchanges.
+- Generate candidate opportunities.
+- Estimate gross spread.
+- Estimate transaction fees.
+- Estimate order-book slippage.
+- Calculate modeled latency costs where applicable.
+- Calculate estimated net profit.
+- Record market-data age and calculation timestamps.
+- Preserve unprofitable candidates for dataset construction and analysis.
+
+The engine must distinguish between a candidate opportunity and a candidate that remains profitable after modeled costs.
+
+### 7.3 ML Service
+
+Responsibilities:
+
+- Load a versioned trained model.
+- Validate input features.
+- Generate profitability predictions or scores.
+- Return predictions with model version and timestamp.
+- Avoid using future information unavailable at decision time.
+- Support comparison with rule-based baselines.
+- Record enough metadata to reproduce predictions.
+
+The ML service must not independently execute or initiate real trades.
+
+### 7.4 Simulation and Backtesting Engine
+
+Responsibilities:
+
+- Replay historical or recorded market data in chronological order.
+- Simulate candidate selection and hypothetical execution.
+- Apply configured fees and slippage assumptions.
+- Apply documented latency and market-data staleness scenarios.
+- Maintain a virtual portfolio.
+- Calculate realized and unrealized simulated P&L as appropriate.
+- Record rejected, selected, and simulated opportunities.
+- Produce reproducible backtest results.
+
+### 7.5 API Service
+
+Responsibilities:
+
+- Expose health and application endpoints.
+- Provide access to market data and candidate opportunities.
+- Return ML predictions.
+- Return virtual portfolio and simulation results.
+- Provide backtesting and performance summaries.
+- Validate request parameters.
+- Handle errors consistently.
+
+### 7.6 Dashboard
+
+Responsibilities:
+
+- Display market prices and order-book summaries.
+- Display candidate opportunities.
+- Display gross spread and estimated net profit.
+- Display fees, slippage, data age, and configured latency assumptions.
+- Display ML predictions and rule-based decisions.
+- Display simulation and backtesting results.
+- Display data-collection health and system errors.
+
+---
+
+## 8. Market Data Collection Strategy
+
+### 8.1 Historical Data
+
+Historical REST endpoints or suitable public archives will be used where available.
+
+Historical data may include:
+
+- OHLCV candles.
+- Historical trades.
+- Historical order-book snapshots or updates, where available.
+- Other relevant market data supported by the source.
+
+Data availability, resolution, retention, and download limits must be verified before planning a large historical dataset.
+
+A year of tick-level or order-book data must not be assumed to be readily available from every exchange.
+
+### 8.2 Live WebSocket Data
+
+The live collector will initially focus on BTC/USDT.
+
+The preferred data fields are:
+
+- Exchange.
+- Symbol.
+- Best bid price.
+- Best bid quantity.
+- Best ask price.
+- Best ask quantity.
+- Exchange event timestamp, when provided.
+- Local receive timestamp.
+- Order-book sequence or update identifiers, when available.
+- Connection and reconnection events.
+- Data validation status.
+- Limited order-book depth, when required.
+
+The schema must preserve the distinction between event time and local receive time.
+
+Both timestamps must be normalized to UTC where possible. Their difference must not automatically be described as network latency because clock synchronization, timestamp semantics, and exchange behavior may affect the measurement.
+
+### 8.3 Pilot Collection
+
+Run a controlled **3–7 day BTC/USDT pilot** before expanding the data-collection workload.
+
+The pilot must measure:
+
+- Number of messages received.
+- Update frequency.
+- Missing updates and sequence gaps.
+- Reconnection frequency.
+- Invalid or out-of-order records.
+- Storage consumption.
+- Collector CPU and memory usage.
+- Availability of the required fields.
+
+Use these measurements to determine the appropriate storage and retention strategy.
+
+### 8.4 Opportunity-Focused Logging
+
+Detailed records should be captured around candidate opportunities, but the system must also retain samples from periods without apparent opportunities.
+
+Keeping only profitable-looking periods would create selection bias and could make the ML model misleading.
+
+The dataset should include:
+
+- Profitable candidates.
+- Unprofitable candidates.
+- Candidates that become unprofitable after costs.
+- Periods with no candidate opportunity.
+- Stale or incomplete data events where relevant to quality analysis.
+
+### 8.5 Data Resolution Limitations
+
+Fifteen-minute OHLCV candles may be useful for coarse historical analysis, but they cannot reliably reconstruct sub-second order-book changes or actual execution outcomes.
+
+The project must not use candle data alone to claim that high-frequency execution or latency effects have been accurately reproduced.
+
+If historical order-book data is unavailable, the relevant experiments must be described as limited simulations rather than empirical reconstruction of actual historical order-book execution.
+
+---
+
+## 9. Data Standardization and Validation
+
+All supported exchanges must use a common internal representation.
+
+### 9.1 Common Market Data Schema
+
+The schema should support fields such as:
 
 ```text
-project/
-│
-├── services/
-│   │
-│   ├── api/
-│   │   └── FastAPI
-│   │
-│   ├── data-collector/
-│   │   └── Python + REST/WebSocket
-│   │
-│   ├── arbitrage-engine/
-│   │   └── Python
-│   │
-│   ├── ml-service/
-│   │   └── Python + scikit-learn
-│   │
-│   ├── simulation-engine/
-│   │   └── Python
-│   │
-│   └── dashboard/
-│       └── Grafana / UI
-│
-├── infrastructure/
-│   ├── docker/
-│   └── aws/
-│
-├── data/
-│
-├── models/
-│
-├── tests/
-│
-├── docs/
-│
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+exchange
+symbol
+event_timestamp
+received_timestamp
+best_bid_price
+best_bid_quantity
+best_ask_price
+best_ask_quantity
+order_book_depth
+sequence_id
+data_source
+validation_status
 ```
 
-The exact directory structure may evolve during development.
+Fields that are unavailable from a particular source may be nullable, provided that the missingness is documented and downstream calculations handle it correctly.
+
+Additional raw fields may be retained when needed for debugging or exchange-specific validation.
+
+### 9.2 Validation Rules
+
+Validate:
+
+- Required fields.
+- Numeric types.
+- Finite price and quantity values.
+- Positive prices.
+- Non-negative quantities.
+- Timestamp format and ordering.
+- Symbol normalization.
+- Exchange identifiers.
+- Order-book consistency.
+- Duplicate or repeated updates where detectable.
+- Sequence continuity where supported.
+
+For a valid non-crossed local order book, the best bid should generally not exceed the best ask. Any violation should be investigated or flagged according to the exchange feed's semantics rather than silently accepted.
+
+Missing or invalid data must not be replaced with invented prices.
+
+### 9.3 Data Quality Handling
+
+Invalid records must be rejected or marked according to documented rules.
+
+Data gaps, reconnects, stale snapshots, and missing quantities must be observable through logs and metrics.
+
+The system must not treat missing information as zero-cost execution.
 
 ---
 
-# 5. Technology Stack
+## 10. Market Data Staleness and Simulated Latency
 
-## Programming
+These are separate concepts and must be recorded independently.
 
-* Python
+### 10.1 Market Data Staleness
 
-## API
+Market-data staleness describes how old the available market observation is when the system makes a decision.
 
-* FastAPI
-* Uvicorn
+The system should calculate data age using suitable timestamps and documented clock assumptions.
 
-## Data Collection
+The selected data-age definition must remain consistent across experiments.
 
-* REST APIs
-* WebSocket APIs
-* Async Python where appropriate
+### 10.2 Simulated Decision or Execution Latency
 
-## Exchanges
+Simulated latency represents an assumed delay between observing data, making a decision, and hypothetically executing the trade.
 
-Initial target exchanges:
+Possible experimental settings include:
 
-* Binance
-* Bybit
-* OKX
+- 0 ms.
+- 50 ms.
+- 100 ms.
+- 250 ms.
+- 500 ms.
 
-Initial trading pairs:
+These are experimental parameters, not claims about the actual latency of any exchange.
 
-* BTC/USDT
-* ETH/USDT
-* XRP/USDT
+The configured delay should be applied consistently in the replay or simulation pipeline. When suitable time-series or order-book updates exist, the simulation should use later observations to estimate whether the opportunity would still be executable after the delay.
 
-Initial timeframe:
+If the data resolution is insufficient to reconstruct the effect, the result must be reported as an assumption-based approximation.
 
-* 15-minute historical data
+### 10.3 Latency Cost Approximation
 
-Real-time data collection may additionally use exchange WebSocket streams.
+A simplified basis-point cost may be used for an initial baseline:
 
-## Databases
+```python
+latency_cost = reference_cost * latency_bps / 10_000
+```
 
-### InfluxDB
+This is a modeled cost approximation. It is not a direct measurement of network latency or a reliable substitute for replaying subsequent market prices.
 
-Used for:
-
-* Time-series market data
-* Price history
-* Bid/ask data
-* Market measurements
-
-### PostgreSQL
-
-Used for:
-
-* Simulation results
-* Arbitrage opportunities
-* ML predictions
-* Backtesting results
-* Experiment metadata
-
-### Redis
-
-Used for:
-
-* Latest prices
-* Frequently accessed data
-* Temporary cache
-* Low-latency access
-
-## Machine Learning
-
-Initial models:
-
-* Logistic Regression
-* Random Forest
-* Gradient Boosting
-
-Possible future models may be added if justified by the experiments.
-
-## Containerization
-
-* Docker
-* Docker Compose
-
-## Dashboard
-
-* Grafana
-* FastAPI endpoints for application-level data
-
-## Cloud
-
-Target:
-
-* AWS
-
-Potential services:
-
-* EC2 or ECS
-* Application Load Balancer
-* VPC
-* Security Groups
-* IAM
-* CloudWatch
-* RDS for PostgreSQL
-* ElastiCache for Redis
-* Appropriate managed or self-hosted time-series storage
-
-The final AWS architecture will be selected based on project complexity, cost and deployment requirements.
+The formula, reference amount, and assumed basis points must be documented in experiment configuration.
 
 ---
 
-# 6. Development Strategy
+## 11. Arbitrage Detection and Spread Definitions
 
-The project will NOT start with AWS infrastructure.
+### 11.1 Cross-Exchange Candidate
 
-Development will follow this progression:
+For a given trading pair:
+
+- Buy at the exchange with the lower executable ask price.
+- Sell at another exchange with the higher executable bid price.
+
+At the top of the order book, the gross price difference per unit is:
 
 ```text
-Local Python
-     ↓
-Individual Services
-     ↓
-Service Integration
-     ↓
-Database Integration
-     ↓
-Machine Learning
-     ↓
-Simulation
-     ↓
-Docker
-     ↓
-Testing
-     ↓
-Security Hardening
-     ↓
-Monitoring
-     ↓
-AWS Deployment
-     ↓
-Cloud Testing
+gross_spread_per_unit = sell_best_bid - buy_best_ask
 ```
 
-The purpose is to ensure that the core system works correctly before introducing cloud infrastructure.
-
----
-
-# 7. Phase 0 — Project Preparation
-
-## Objectives
-
-Define the project structure and technical requirements before implementation.
-
-## Tasks
-
-* [ ] Create Git repository
-* [ ] Create README.md
-* [ ] Create PROJECT_PLAN.md
-* [ ] Define service boundaries
-* [ ] Define database responsibilities
-* [ ] Define API contracts
-* [ ] Define common data models
-* [ ] Define environment variables
-* [ ] Define testing strategy
-* [ ] Define security requirements
-* [ ] Define logging strategy
-
-## Deliverables
+For a chosen quantity:
 
 ```text
-README.md
-PROJECT_PLAN.md
-Architecture Diagram
-Initial Repository Structure
+gross_spread = quantity * (
+    sell_best_bid - buy_best_ask
+)
 ```
 
----
+The gross spread can be negative.
 
-# 8. Phase 1 — Data Collector Service
+A negative spread means that the selected buy and sell prices are economically unfavorable under the current observations. It does not automatically mean that the data or calculation is invalid.
 
-## Objective
+### 11.2 Executable Quantity
 
-Create a service capable of collecting cryptocurrency market data from multiple exchanges.
+The target quantity must be compatible with:
 
-## Initial Exchanges
+- The configured notional amount.
+- The buy-side available quantity.
+- The sell-side available quantity.
+- The selected order-book depth.
+- Exchange quantity limits and precision, when modeled.
 
-* [ ] Binance
-* [ ] Bybit
-* [ ] OKX
+If the book does not contain enough depth for the requested quantity, the candidate must be skipped or marked as insufficient-depth. The engine must not assume that unavailable liquidity can be executed at the last visible price.
 
-## Initial Assets
+### 11.3 Order-Book Cost Estimation
 
-* [ ] BTC/USDT
-* [ ] ETH/USDT
-* [ ] XRP/USDT
-
-## Data
-
-The collector should support:
-
-* Timestamp
-* Exchange
-* Symbol
-* Bid price
-* Ask price
-* Last price
-* Volume
-* OHLCV where available
-
-## Requirements
-
-* [ ] REST API support
-* [ ] WebSocket support
-* [ ] Connection retry
-* [ ] Timeout handling
-* [ ] Reconnection handling
-* [ ] Duplicate detection
-* [ ] Timestamp normalization
-* [ ] Exchange-specific error handling
-* [ ] Logging
-
-## Fault Handling
+The engine should estimate buy cost and sell proceeds by walking the available order-book levels for the target quantity.
 
 ```text
-Exchange Connection
-        │
-        ├── Success → Continue
-        │
-        └── Failure
-              ↓
-          Retry
-              ↓
-        Reconnect
-              ↓
-        Log Failure
+buy_cost = cost of consuming the required ask-side quantity
+sell_proceeds = proceeds from consuming the required bid-side quantity
 ```
 
-## Deliverable
+If the available depth is insufficient, the calculation must not invent additional levels.
 
-A standalone `data-collector` service capable of producing standardized market data.
-
----
-
-# 9. Phase 2 — Data Standardization
-
-Different exchanges may return data using different structures.
-
-A common internal format will therefore be created.
-
-Example:
-
-```json
-{
-  "exchange": "example",
-  "symbol": "BTC/USDT",
-  "timestamp": "2026-01-01T12:00:00Z",
-  "bid": 50000.0,
-  "ask": 50010.0,
-  "last": 50005.0,
-  "volume": 123.45
-}
-```
-
-## Tasks
-
-* [ ] Define common schema
-* [ ] Implement exchange adapters
-* [ ] Normalize symbols
-* [ ] Normalize timestamps
-* [ ] Validate incoming data
-* [ ] Reject malformed data
-* [ ] Add unit tests
-
----
-
-# 10. Phase 3 — Database Layer
-
-Three storage systems will have different responsibilities.
+### 11.4 Estimated Fees
 
 ```text
-Market / Time-Series Data
-          ↓
-       InfluxDB
-
-
-Simulation / ML / Results
-          ↓
-      PostgreSQL
-
-
-Latest / Frequently Used Data
-          ↓
-        Redis
+estimated_fees =
+    buy_cost * buy_exchange_fee_rate
+    + sell_proceeds * sell_exchange_fee_rate
 ```
 
-## InfluxDB
+Fee rates must be configurable per exchange and documented. The rates are assumptions unless verified for the relevant account and market.
 
-* [ ] Market prices
-* [ ] Bid/ask prices
-* [ ] Historical time-series
-* [ ] Timestamp indexing
+### 11.5 Estimated Slippage
 
-## PostgreSQL
+For the same quantity:
 
-* [ ] Arbitrage opportunities
-* [ ] Simulated trades
-* [ ] P&L
-* [ ] ML predictions
-* [ ] Backtesting results
-* [ ] Experiment information
+```text
+top_of_book_buy_cost =
+    quantity * buy_best_ask
 
-## Redis
+top_of_book_sell_proceeds =
+    quantity * sell_best_bid
 
-* [ ] Latest exchange prices
-* [ ] Latest arbitrage state
-* [ ] Cache
-* [ ] Temporary calculations
+estimated_slippage =
+    (buy_cost - top_of_book_buy_cost)
+    + (top_of_book_sell_proceeds - sell_proceeds)
+```
+
+The result estimates the difference between top-of-book execution and consuming the available book depth. It does not capture all possible real-world execution effects.
+
+### 11.6 Estimated Net Profit
+
+A basic model is:
+
+```text
+estimated_net_profit =
+    sell_proceeds
+    - buy_cost
+    - estimated_fees
+    - estimated_latency_cost
+    - other_explicitly_modeled_costs
+```
+
+Every cost must be defined once and applied consistently. Do not subtract slippage twice if the buy cost and sell proceeds already include order-book walking.
+
+If the project adds transfer fees, inventory rebalancing, funding, or other costs, each must be introduced as an explicit model component with documented assumptions.
+
+### 11.7 Candidate Versus Profitable Opportunity
+
+The engine should distinguish:
+
+- **Candidate:** A cross-exchange price comparison that meets basic data and quantity requirements.
+- **Gross-positive candidate:** A candidate with a positive gross spread.
+- **Net-profitable candidate:** A candidate with positive estimated net profit under the configured assumptions.
+- **Rejected candidate:** A candidate excluded because of invalid data, insufficient depth, staleness rules, or other documented eligibility criteria.
+
+The system should preserve valid unprofitable candidates for analysis and ML training.
+
+### 11.8 Negative Spread Validation
+
+The data model must not reject a candidate solely because `spread` or `spread_percent` is negative.
+
+For example:
+
+```text
+buy_best_ask = 100.00
+sell_best_bid = 99.50
+```
+
+The resulting gross spread is negative and represents an unprofitable candidate.
+
+The model should validate data types, finite values, valid prices, and calculation integrity. Economic profitability should be evaluated separately.
+
+The existing validation rule that raises an error whenever `spread < 0` or `spread_percent < 0` must be revised.
+
+Tests must confirm that a negative spread can be stored and evaluated without an invalid-spread exception.
 
 ---
 
-# 11. Phase 4 — Arbitrage Detection Engine
+## 12. Storage Architecture
 
-## Objective
+### 12.1 InfluxDB
 
-Identify potential price differences between exchanges.
+Primary purpose: time-series market data.
 
-Example:
+Potential data:
 
-```text
-Exchange A
-BTC = $50,000
+- Normalized market observations.
+- Best bid and ask updates.
+- Selected order-book measurements.
+- Data-quality and collection metrics, if suitable.
 
-Exchange B
-BTC = $50,300
+High-frequency data retention must be designed according to measured storage growth.
 
-Potential Difference
-= $300
-```
+### 12.2 PostgreSQL
 
-However, raw price difference does NOT automatically mean profitability.
+Primary purpose: structured application and research records.
 
-The engine must consider:
+Potential tables or entities:
 
-* Trading fees
-* Withdrawal/transfer costs if applicable to the simulation model
-* Slippage
-* Latency
-* Spread
-* Market liquidity
-* Execution assumptions
+- Exchanges and trading pairs.
+- Candidate opportunities.
+- Candidate features.
+- ML predictions.
+- Simulated trades.
+- Virtual portfolio snapshots.
+- Backtest runs.
+- Performance metrics.
+- Model versions.
+- Experiment configurations.
+- Experiment results.
 
-## Basic Concept
+The schema should support reproducibility and traceability between data, model versions, and simulation results.
 
-```text
-Gross Opportunity
-        ↓
-- Trading Fees
-        ↓
-- Slippage
-        ↓
-- Estimated Costs
-        ↓
-- Latency Impact
-        ↓
-Net Estimated Profit
-```
+### 12.3 Redis
 
-## Tasks
+Primary purpose: low-latency access to frequently updated values.
 
-* [ ] Bid/ask comparison
-* [ ] Cross-exchange price comparison
-* [ ] Spread calculation
-* [ ] Fee calculation
-* [ ] Slippage model
-* [ ] Latency model
-* [ ] Net profit calculation
-* [ ] Minimum profitability threshold
-* [ ] Opportunity logging
-* [ ] Unit tests
+Potential uses:
+
+- Latest market prices.
+- Latest validated order-book snapshots.
+- Short-lived application cache.
+- Temporary coordination state where required.
+
+Redis must not be treated as the sole permanent store of historical market data or experiment results.
 
 ---
 
-# 12. Phase 5 — Feature Engineering
+## 13. Dataset Design and Target Definition
 
-Features will be created for the ML component.
+The dataset and target definition must be established before final ML training.
 
-Possible features:
+### 13.1 Unit of Observation
 
-* Price difference
-* Percentage spread
-* Bid/ask spread
-* Trading volume
-* Volatility
-* Historical profitability
-* Exchange pair
-* Estimated fees
-* Estimated slippage
-* Estimated latency
-* Market momentum
-* Time-based features
+Each dataset row should represent a candidate opportunity evaluated at a defined decision time.
 
-Example:
+The record should identify:
+
+- The candidate timestamp.
+- Buy exchange.
+- Sell exchange.
+- Trading pair.
+- Observed market-data state.
+- Market-data age.
+- Configured execution delay.
+- Estimated costs.
+- Candidate eligibility.
+- Eventual simulated outcome, where available.
+
+The exact unit of observation must be documented and applied consistently.
+
+### 13.2 Candidate Labels
+
+An initial binary target may be defined as:
 
 ```text
-Raw Market Data
-       ↓
-Feature Extraction
-       ↓
-ML Feature Vector
+1 = simulated net profit is positive after the
+    configured execution assumptions and costs
+
+0 = simulated net profit is zero or negative
+    under those assumptions
 ```
+
+This definition must be tied to a specific simulated execution policy and evaluation horizon.
+
+If the simulation cannot reliably estimate the future outcome because of insufficient data resolution, the label must be described as an approximation.
+
+Do not label candidates as profitable based only on the initial observed spread if the intended target is post-cost profitability after a delay.
+
+### 13.3 Feature Candidates
+
+Potential features include:
+
+- Gross spread.
+- Gross spread percentage.
+- Best bid and ask prices.
+- Bid and ask quantities.
+- Estimated order-book execution cost.
+- Estimated fees.
+- Estimated slippage.
+- Market-data age.
+- Difference in event timestamps across exchanges.
+- Configured simulation latency.
+- Order-book depth and imbalance, where available.
+- Short-term price changes computed only from data available at decision time.
+- Exchange and symbol identifiers, encoded appropriately.
+
+Features must be selected based on data availability, the research question, and the chosen model.
+
+### 13.4 Avoiding Data Leakage
+
+Features must contain only information that would have been available at the decision time.
+
+The future simulated result may determine the target label, but it must not be included as an input feature.
+
+The following must be avoided:
+
+- Using future prices as current features.
+- Calculating features with future observations.
+- Using the final simulated P&L as a model input.
+- Randomly mixing temporally adjacent records across training and test sets without considering leakage.
+- Selecting a model based on the final test set.
+
+Dataset construction must be tested for temporal correctness.
 
 ---
 
-# 13. Phase 6 — Machine Learning Service
+## 14. Rule-Based Baselines
 
-## Objective
+The ML model must be compared against understandable non-ML approaches.
 
-Estimate whether an arbitrage opportunity is likely to be profitable.
+### Baseline A: Gross-Spread Rule
 
-The ML service will initially treat the problem as a classification task.
+Select candidates based on gross spread alone.
 
-```text
-Opportunity
-      ↓
-Feature Extraction
-      ↓
-ML Model
-      ↓
-Prediction
-      ↓
-Profitable / Unprofitable
-```
+This is a deliberately simple baseline and may select opportunities that are unprofitable after costs.
 
-## Initial Models
+### Baseline B: Fee-Aware Rule
 
-### Logistic Regression
+Select candidates based on estimated gross profit after transaction fees.
 
-Used as a baseline model.
+### Baseline C: Cost-Aware Rule
 
-### Random Forest
+Select candidates using the configured model for:
 
-Used to model nonlinear relationships and feature interactions.
+- Transaction fees.
+- Order-book depth and slippage.
+- Data staleness.
+- Simulated execution latency.
+- Other explicitly modeled costs.
 
-### Gradient Boosting
+### Baseline D: ML-Filtered Rule
 
-Used as an additional tree-based comparison model.
+Apply the ML model to eligible candidates and select candidates according to a threshold chosen using training and validation data.
 
-## Tasks
+All baselines must use the same underlying candidate data and comparable execution assumptions.
 
-* [ ] Prepare dataset
-* [ ] Define target variable
-* [ ] Clean data
-* [ ] Feature engineering
-* [ ] Train/test split
-* [ ] Train baseline model
-* [ ] Train Random Forest
-* [ ] Train Gradient Boosting
-* [ ] Evaluate models
-* [ ] Compare metrics
-* [ ] Save trained models
-* [ ] Create prediction API
-* [ ] Version models
-
-## Evaluation Metrics
-
-Depending on class balance and project requirements:
-
-* Accuracy
-* Precision
-* Recall
-* F1-score
-* Confusion Matrix
-* ROC-AUC where appropriate
-
-Model selection will be based on documented experimental results rather than assumptions.
+The ML filter should not receive an unfair advantage from different data, different fees, or a more favorable simulation policy.
 
 ---
 
-# 14. Phase 7 — Simulation Engine
+## 15. Machine Learning Models
 
-## Objective
+The initial model candidates are:
 
-Simulate arbitrage trading without real money.
+- Logistic Regression.
+- Random Forest.
+- Gradient Boosting.
 
-The simulation engine will maintain a virtual portfolio.
+A simple baseline model should be implemented before more complex models are considered.
 
-Example:
+The final model must be selected based on validation performance and the project's research objectives, not on model complexity.
 
-```text
-Initial Virtual Balance
-        ↓
-Opportunity Detected
-        ↓
-ML Evaluation
-        ↓
-Simulation Decision
-        ↓
-Virtual BUY / SELL
-        ↓
-Fees + Slippage + Latency
-        ↓
-Virtual P&L
-        ↓
-Database
-```
+### 15.1 Logistic Regression
 
-## Simulation Components
+Purpose:
 
-* [ ] Virtual wallet
-* [ ] Virtual balances
-* [ ] Simulated orders
-* [ ] BUY simulation
-* [ ] SELL simulation
-* [ ] Fees
-* [ ] Slippage
-* [ ] Latency
-* [ ] P&L calculation
-* [ ] Trade history
-* [ ] Drawdown
-* [ ] Performance statistics
+- Establish a simple and interpretable classification baseline.
+- Evaluate whether basic features contain useful predictive information.
 
----
+### 15.2 Random Forest
 
-# 15. Phase 8 — Backtesting
+Purpose:
 
-Historical data will be used to evaluate the system.
+- Capture nonlinear relationships between market features and simulated profitability.
+- Compare against the simpler baseline.
 
-```text
-Historical Data
-       ↓
-Arbitrage Detection
-       ↓
-ML Prediction
-       ↓
-Simulation
-       ↓
-Performance Results
-```
+### 15.3 Gradient Boosting
 
-## Tasks
+Purpose:
 
-* [ ] Historical data loader
-* [ ] Historical replay
-* [ ] Strategy execution
-* [ ] Transaction cost simulation
-* [ ] P&L calculation
-* [ ] Performance metrics
-* [ ] Result persistence
+- Evaluate whether boosted decision trees improve predictive and practical performance.
 
-## Important Principle
+The implementation may use an appropriate maintained Python ML library.
 
-Backtesting results must include realistic assumptions about:
+The project must document:
 
-* Fees
-* Slippage
-* Latency
-* Available liquidity
-* Data quality
-
-The system must avoid presenting theoretical gross spreads as guaranteed profits.
+- Model configuration.
+- Feature set.
+- Target definition.
+- Training period.
+- Validation period.
+- Test period.
+- Model version.
+- Random seeds where applicable.
+- Evaluation metrics.
 
 ---
 
-# 16. Phase 9 — Paper Trading Mode
+## 16. Training, Validation, and Testing
 
-Paper trading will simulate near-real-time operation.
+Financial time-series data must be split chronologically.
 
-```text
-Live Public Market Data
-        ↓
-Data Collector
-        ↓
-Arbitrage Detection
-        ↓
-ML Prediction
-        ↓
-Simulation Engine
-        ↓
-Virtual Order
-        ↓
-P&L
-```
+### Required Approach
 
-No real order will be sent to any exchange.
+1. Training period: earlier observations.
+2. Validation period: later observations used for model and threshold selection.
+3. Test period: a still later period reserved for final evaluation.
+
+A walk-forward evaluation may be added to test whether the findings remain stable across different market periods.
+
+Random train/test splitting must not be the only evaluation method.
+
+Where overlapping opportunities or outcome horizons create dependencies, the split strategy must prevent future information from leaking into training.
+
+The test set must not be repeatedly used to tune the model or its selection threshold.
 
 ---
 
-# 17. Phase 10 — FastAPI Service
+## 17. Simulation and Backtesting
 
-FastAPI will provide a central API layer.
+The simulation engine will evaluate candidate opportunities without executing real exchange orders.
 
-Possible endpoints:
+### 17.1 Simulation Responsibilities
+
+- Replay market data in chronological order.
+- Evaluate candidates using a specified policy.
+- Apply documented transaction fees.
+- Apply order-book depth and slippage calculations.
+- Apply configured staleness and latency assumptions.
+- Record candidate decisions.
+- Simulate eligible trades.
+- Track virtual balances and positions.
+- Calculate net simulated P&L.
+- Export reproducible experiment results.
+
+### 17.2 Virtual Portfolio
+
+The virtual portfolio should track:
+
+- Starting virtual balance.
+- Simulated cash balances.
+- Simulated positions, if modeled.
+- Simulated buys and sells.
+- Transaction costs.
+- Net P&L.
+- Equity curve.
+- Drawdown, where meaningful.
+
+The simulation must define whether inventory is assumed to be available on both exchanges. If it assumes pre-positioned assets and quote currency on both exchanges, that assumption must be explicit.
+
+Cross-exchange arbitrage may require inventory on both exchanges. The project must not imply that buying on one exchange and selling on another is operationally equivalent to an atomic transaction.
+
+### 17.3 Execution Assumptions
+
+The backtester must document:
+
+- Whether both legs are assumed to execute.
+- How the target quantity is chosen.
+- How insufficient depth is handled.
+- How latency affects the decision or execution price.
+- Whether partial fills are modeled.
+- How fees are applied.
+- How inventory constraints are handled.
+- What happens when market data is missing or stale.
+
+Any execution behavior that is not modeled must be listed as a limitation.
+
+---
+
+## 18. Research Experiments
+
+Experiments should answer the research question rather than simply demonstrate that the code runs.
+
+### Experiment 1: Gross Spread Versus Net Profit
+
+Compare gross spread with simulated net profit after fees and other configured costs.
+
+Goal:
+
+- Quantify how many gross-positive candidates become unprofitable after costs.
+
+### Experiment 2: Market-Data Staleness
+
+Evaluate candidate outcomes under different data-age limits or staleness scenarios.
+
+Goal:
+
+- Determine how data freshness affects candidate eligibility and net simulated profitability.
+
+The tested limits must be selected based on observed data and documented experimental design, not presented as universal thresholds.
+
+### Experiment 3: Simulated Execution Latency
+
+Compare scenarios such as 0, 50, 100, 250, and 500 ms where the available data supports the experiment.
+
+Goal:
+
+- Measure how assumed execution delay affects opportunity survival and simulated net profit.
+
+These values are simulation settings, not measured exchange latency benchmarks.
+
+### Experiment 4: Rule-Based Versus ML Filtering
+
+Compare:
+
+- Gross-spread baseline.
+- Fee-aware baseline.
+- Cost-aware baseline.
+- ML-filtered baseline.
+
+Goal:
+
+- Determine whether ML improves candidate selection or practical simulated performance under comparable assumptions.
+
+### Experiment 5: Feature Ablation
+
+Where sufficient data exists, compare the ML model with and without selected feature groups, such as:
+
+- Market-data age.
+- Order-book depth and slippage features.
+- Short-term market movement features.
+
+Goal:
+
+- Investigate whether these feature groups add useful predictive information.
+
+### Experiment 6: Cross-Period Evaluation
+
+Evaluate the selected method on separate chronological periods or through walk-forward testing.
+
+Goal:
+
+- Determine whether the results remain reasonably stable outside the period used for model selection.
+
+Do not claim generalization based on one favorable test period.
+
+---
+
+## 19. Evaluation Metrics
+
+### 19.1 Classification Metrics
+
+Use appropriate metrics for the profitability target:
+
+- Precision.
+- Recall.
+- F1-score.
+- Confusion matrix.
+- PR-AUC, especially when classes are imbalanced.
+- ROC-AUC where appropriate.
+
+Accuracy alone is insufficient because profitable candidates may be relatively rare.
+
+### 19.2 Simulation Metrics
+
+Report:
+
+- Total net simulated P&L.
+- Average net profit per selected candidate or simulated trade.
+- Number of candidates observed.
+- Number of candidates selected.
+- Number of simulated trades.
+- Percentage of selected candidates that were profitable.
+- Gross profit compared with net profit.
+- Total estimated transaction fees.
+- Total estimated slippage.
+- Modeled latency cost.
+- Maximum drawdown, where the portfolio simulation makes this meaningful.
+- Missed profitable candidates, under the chosen target definition.
+
+### 19.3 Data Quality Metrics
+
+Report:
+
+- Total market-data messages.
+- Missing or invalid records.
+- Data gaps.
+- Reconnection events.
+- Stale observations.
+- Timestamp anomalies.
+- Storage consumption.
+- Collector availability.
+
+### 19.4 Reporting Requirements
+
+Every experiment report must include:
+
+- Dataset period.
+- Data source and resolution.
+- Model or baseline version.
+- Feature set.
+- Target definition.
+- Fees and simulation assumptions.
+- Latency and staleness settings.
+- Evaluation metrics.
+- Known limitations.
+
+Results must be reproducible from saved configuration and version information.
+
+---
+
+## 20. API Design
+
+The FastAPI service will expose endpoints for system health, market data, candidate opportunities, ML predictions, simulation, and backtesting.
+
+Initial endpoint plan:
 
 ```text
 GET  /health
@@ -753,1070 +1055,770 @@ GET  /predictions
 GET  /trades
 GET  /portfolio
 GET  /performance
-GET  /backtest
+POST /backtest
+GET  /backtest/{run_id}
 ```
 
-## Tasks
+Endpoint methods and request/response schemas may be refined during implementation.
 
-* [ ] API structure
-* [ ] Pydantic models
-* [ ] Request validation
-* [ ] Response validation
-* [ ] Authentication
-* [ ] Error handling
-* [ ] API documentation
-* [ ] Health endpoint
-* [ ] Integration tests
+The API must:
+
+- Validate incoming parameters.
+- Return consistent response structures.
+- Handle missing records and service failures.
+- Avoid exposing secrets.
+- Distinguish unavailable data from empty results.
+- Return sufficient metadata to identify the model or backtest run where relevant.
+
+Long-running backtests may require background execution rather than blocking an API request.
 
 ---
 
-# 18. Phase 11 — Dockerization
+## 21. Dashboard and Monitoring
 
-Every major service will have its own container.
+Grafana will be used for visualization where appropriate.
 
-```text
-docker-compose.yml
+### Market Monitoring
 
-services:
+- Latest bid and ask prices.
+- Exchange comparison.
+- Data age.
+- Data-collection status.
+- Connection and reconnection events.
 
-  api:
-    FastAPI
+### Arbitrage Monitoring
 
-  data-collector:
-    Python
+- Candidate count.
+- Gross spread.
+- Estimated net profit.
+- Fees and slippage.
+- Candidate eligibility.
+- Staleness and latency settings.
 
-  arbitrage-engine:
-    Python
+### ML Monitoring
 
-  ml-service:
-    Python + scikit-learn
+- Prediction counts.
+- Predicted profitability distribution.
+- Model version.
+- Classification metrics from completed evaluations.
+- Comparison with rule-based baselines.
 
-  simulation:
-    Python
+### Simulation Monitoring
 
-  postgres:
-    PostgreSQL
+- Virtual portfolio value.
+- Net simulated P&L.
+- Simulated trade count.
+- Equity curve.
+- Drawdown where applicable.
+- Backtest run summaries.
 
-  influxdb:
-    InfluxDB
-
-  redis:
-    Redis
-
-  dashboard:
-    Grafana
-```
-
-## Docker Requirements
-
-Each application container should have:
-
-* [ ] Dockerfile
-* [ ] `.dockerignore`
-* [ ] Environment configuration
-* [ ] Health check
-* [ ] Restart policy
-* [ ] Minimal dependencies
-* [ ] Non-root execution where practical
-* [ ] Proper logging
-
-## Development Goal
-
-The complete local system should eventually start with:
-
-```bash
-docker compose up
-```
-
-and stop with:
-
-```bash
-docker compose down
-```
+Dashboards must clearly label simulated values and must not present them as real trading performance.
 
 ---
 
-# 19. Phase 12 — Service Communication
+## 22. Docker and Containerization
 
-Services should communicate through clearly defined interfaces.
+The project will use Docker and Docker Compose for local development and integration.
 
-Example:
+Planned services:
 
 ```text
-Data Collector
-      ↓
-Redis / InfluxDB
-      ↓
-Arbitrage Engine
-      ↓
-PostgreSQL
-      ↓
-ML Service
-      ↓
-Simulation Engine
-      ↓
-PostgreSQL
-      ↓
-FastAPI
-      ↓
-Dashboard
+api
+data-collector
+arbitrage-engine
+ml-service
+simulation
+postgres
+influxdb
+redis
+dashboard
 ```
 
-Service dependencies must be documented.
+Service boundaries may be combined or split during development when justified. Avoid introducing unnecessary distributed-system complexity before the core workflow is reliable.
 
-Services should avoid unnecessary direct access to databases owned by other services.
+### Docker Requirements
+
+- Use a consistent Python version.
+- Use dependency files with controlled versions.
+- Use environment variables for configuration.
+- Include health checks where appropriate.
+- Configure restart behavior deliberately.
+- Use persistent volumes for required data.
+- Keep secrets out of source control.
+- Use service names rather than hard-coded container IP addresses.
+- Add logs that identify the relevant service and operation.
+- Ensure that the application can start and stop safely.
+
+### Local Development Goal
+
+The entire platform should eventually be runnable using a documented Docker Compose workflow.
+
+Individual services may be developed and tested independently before full integration.
 
 ---
 
-# 20. Phase 13 — Security Architecture
+## 23. Security Requirements
 
-Security will be implemented from the beginning rather than added at the end.
+Security must be considered throughout development.
 
-## 20.1 Secrets
+### Credentials and Secrets
 
-Sensitive values must NOT be stored in source code.
+- Do not commit API keys, passwords, tokens, or cloud credentials.
+- Provide `.env.example` with placeholder values only.
+- Use environment variables or a suitable secrets manager.
+- Do not request exchange trading permissions.
+- Public market-data collection should use unauthenticated endpoints wherever possible.
 
-Bad:
+### Application Security
 
-```python
-API_KEY = "my-secret-key"
-```
+- Validate all external input.
+- Use least-privilege permissions.
+- Restrict database access.
+- Avoid exposing internal services publicly without a clear need.
+- Keep dependencies maintained.
+- Record errors without logging secrets.
+- Use non-root containers where practical.
+- Separate development and production configuration.
 
-Correct approach:
+### AWS Security
 
-```text
-Environment Variables
-        ↓
-Secrets Management
-        ↓
-Application
-```
-
-Local development may use `.env`, but:
-
-```text
-.env
-```
-
-must be excluded from Git.
-
-A safe template will be provided:
-
-```text
-.env.example
-```
+- Use IAM least privilege.
+- Keep databases private.
+- Restrict security-group ingress.
+- Store secrets securely.
+- Enable appropriate monitoring and billing alerts.
+- Review public exposure before deployment.
 
 ---
 
-# 20.2 API Security
+## 24. Testing Strategy
 
-* [ ] Authentication
-* [ ] Authorization
-* [ ] Input validation
-* [ ] Rate limiting where appropriate
-* [ ] Error handling without leaking secrets
-* [ ] Secure HTTP configuration
+Testing must cover calculation correctness, data quality, service behavior, and research validity.
 
----
-
-# 20.3 Database Security
-
-Databases should not be publicly exposed.
-
-```text
-Internet
-   │
-   X
-   │
-PostgreSQL
-```
-
-Instead:
-
-```text
-Application
-     │
-     ▼
-Private Database
-```
-
-Database credentials must be protected.
-
----
-
-# 20.4 Network Security
-
-Cloud deployment will use network isolation.
-
-Conceptually:
-
-```text
-Internet
-   │
-HTTPS
-   │
-Load Balancer
-   │
-Application
-   │
-Private Network
-   │
- ┌─┴──────────────┐
- │                │
-Database        Redis
-```
-
-Security Groups will restrict unnecessary inbound and outbound traffic.
-
----
-
-# 20.5 IAM
-
-AWS permissions will follow the **Least Privilege** principle.
-
-Each service should receive only the permissions required for its operation.
-
-Avoid:
-
-```text
-Full Administrator Access
-```
-
-for application services.
-
----
-
-# 20.6 Container Security
-
-* [ ] Avoid root execution
-* [ ] Minimize image size
-* [ ] Remove unnecessary packages
-* [ ] Keep dependencies updated
-* [ ] Do not store secrets in images
-* [ ] Expose only required ports
-* [ ] Add health checks
-* [ ] Restart failed services where appropriate
-
----
-
-# 20.7 Trading Security
-
-The project must remain simulation-only.
-
-API credentials, if ever used for market-data access, must not have:
-
-```text
-Withdrawal Permission
-Real Trading Permission
-```
-
-The safest initial architecture is to use public market-data endpoints without exchange API keys whenever possible.
-
----
-
-# 21. Phase 14 — Fault Tolerance
-
-The system must tolerate individual service failures.
-
-Example:
-
-```text
-Data Collector
-      ↓
-Connection Failure
-      ↓
-Retry
-      ↓
-Reconnect
-```
-
-If a container crashes:
-
-```text
-Container Failure
-      ↓
-Health Check
-      ↓
-Restart Policy
-      ↓
-Container Restart
-```
-
-The system should avoid unnecessary total-system failure when a single service becomes unavailable.
-
-## Failure Scenarios
+### 24.1 Unit Tests
 
 Test:
 
-* [ ] Exchange API unavailable
-* [ ] WebSocket disconnected
-* [ ] Database unavailable
-* [ ] Redis unavailable
-* [ ] ML service unavailable
-* [ ] API unavailable
-* [ ] Container crash
-* [ ] Invalid market data
-* [ ] Network latency
-* [ ] Duplicate data
-* [ ] Missing data
+- Market-data validation.
+- Symbol normalization.
+- Timestamp parsing.
+- Spread calculation.
+- Fee calculation.
+- Order-book walking.
+- Slippage estimation.
+- Net profit calculation.
+- Candidate eligibility.
+- ML feature construction.
+- Target-label construction.
 
----
+### 24.2 Required Spread and Profit Tests
 
-# 22. Phase 15 — Logging
+At minimum, include the following cases:
 
-Every service should produce structured logs.
-
-Example:
+**Case A: Negative spread is valid**
 
 ```text
-Timestamp
-Service
-Log Level
-Event
-Request ID
-Error
+buy_best_ask = 100.00
+sell_best_bid = 99.50
 ```
 
-Example:
+Expected result:
+
+- Gross spread is negative.
+- Candidate can be represented as unprofitable.
+- No exception is raised solely because the spread is negative.
+
+**Case B: Positive gross spread but negative net profit**
 
 ```text
-2026-01-01 12:00:01
-data-collector
-ERROR
-Binance WebSocket disconnected
+gross_spread > 0
+estimated_fees + other_costs > gross_spread
 ```
 
-Sensitive information must not be written to logs.
+Expected result:
 
-Do NOT log:
+- Gross spread remains positive.
+- Net profit is negative.
+- Candidate is not labeled as net-profitable under the defined target.
 
-* API secrets
-* Passwords
-* Tokens
-* Private credentials
+**Case C: Insufficient order-book depth**
+
+Expected result:
+
+- Candidate is skipped or marked as insufficient-depth.
+- The engine does not invent unavailable liquidity.
+
+**Case D: Invalid market data**
+
+Expected result:
+
+- Invalid prices, malformed records, and invalid timestamps are rejected or flagged according to the documented validation policy.
+
+**Case E: Stale market data**
+
+Expected result:
+
+- Staleness is calculated according to the chosen definition.
+- The configured eligibility policy is applied consistently.
+
+**Case F: Missing exchange data**
+
+Expected result:
+
+- The engine does not fabricate a missing order book.
+- The missing data is observable through logs or metrics.
+
+**Case G: Positive net profit**
+
+Expected result:
+
+- Fees, slippage, and configured costs are applied exactly once.
+- The net profit matches an independently calculated expected result.
+
+### 24.3 Integration Tests
+
+Test:
+
+- Collector to storage.
+- Storage to arbitrage engine.
+- Candidate generation to database.
+- Feature generation to ML inference.
+- ML predictions to simulation.
+- API to database.
+- Dashboard data retrieval.
+- Docker Compose startup and health checks.
+
+### 24.4 Backtesting Tests
+
+Verify:
+
+- Chronological replay.
+- No future information in features.
+- Correct label construction.
+- Correct fee and cost handling.
+- Reproducibility with the same configuration.
+- Consistent comparison between baselines.
+- Appropriate handling of missing data.
 
 ---
 
-# 23. Phase 16 — Monitoring
+## 25. Logging and Observability
 
-Monitoring will be implemented locally first and then adapted for AWS.
+Use structured logging where practical.
 
-Important metrics:
+Logs should include:
 
-* CPU usage
-* Memory usage
-* Container status
-* API response time
-* Request count
-* Error count
-* WebSocket connection status
-* Data collection rate
-* Database status
-* Redis status
-* ML prediction count
-* Simulation count
+- Timestamp.
+- Service name.
+- Severity.
+- Operation or event type.
+- Exchange and symbol when relevant.
+- Error details.
+- Backtest or experiment identifier where relevant.
 
-Application-level metrics may include:
+Important events include:
+
+- WebSocket connection and disconnection.
+- Reconnection attempts.
+- Invalid or stale data.
+- Order-book gaps.
+- Candidate generation.
+- Insufficient depth.
+- Simulation completion.
+- Model loading and prediction failures.
+- Database errors.
+- API failures.
+
+Do not log secrets or unnecessarily sensitive configuration.
+
+Monitoring must help distinguish a market-data problem from a calculation, storage, or ML problem.
+
+---
+
+## 26. Configuration Management
+
+Use configuration files and environment variables for settings that may change between experiments.
+
+Potential configuration fields:
 
 ```text
-Opportunities Detected
-Simulated Trades
-Profitable Simulations
-Unprofitable Simulations
-Total Simulated P&L
+EXCHANGES
+TRADING_PAIRS
+INITIAL_NOTIONAL
+EXCHANGE_FEE_RATES
+MAX_MARKET_DATA_AGE
+SIMULATED_LATENCY_MS
+LATENCY_COST_BPS
+MIN_NET_PROFIT
+ORDER_BOOK_DEPTH
+DATA_RETENTION_POLICY
+DATABASE_URL
+INFLUXDB_URL
+REDIS_URL
+MODEL_PATH
 ```
 
----
+These are illustrative configuration names. The final configuration must match the implementation.
 
-# 24. Phase 17 — Dashboard
+Experimental parameters must be saved with each backtest or experiment run.
 
-The dashboard will visualize the system.
-
-## Market Data
-
-* Current prices
-* Exchange comparison
-* Bid/ask
-* Volume
-* Historical price
-
-## Arbitrage
-
-* Detected opportunities
-* Spread
-* Estimated fees
-* Slippage
-* Net estimated profit
-
-## ML
-
-* Prediction
-* Probability where supported
-* Model metrics
-* Confusion matrix
-* Feature importance where applicable
-
-## Simulation
-
-* Virtual balance
-* P&L
-* Number of simulated trades
-* Win/loss statistics
-* Drawdown
-* Performance over time
+Avoid hard-coding fee rates, thresholds, and simulation assumptions throughout the codebase.
 
 ---
 
-# 25. Phase 18 — Testing
+## 27. Suggested Repository Structure
 
-Testing will occur at multiple levels.
-
-## Unit Tests
-
-Test individual functions.
-
-Examples:
+The repository may follow this structure, adapting to the existing project where necessary:
 
 ```text
-Fee Calculation
-Spread Calculation
-Slippage Calculation
-P&L Calculation
-Feature Extraction
+crypto-arbitrage-platform/
+|
+|-- app/
+|   |-- api/
+|   |-- collector/
+|   |-- arbitrage/
+|   |-- ml/
+|   |-- simulation/
+|   |-- storage/
+|   |-- common/
+|   |-- config/
+|   |-- main.py
+|
+|-- tests/
+|   |-- unit/
+|   |-- integration/
+|   |-- backtesting/
+|
+|-- data/
+|   |-- raw/
+|   |-- processed/
+|   |-- samples/
+|
+|-- models/
+|
+|-- experiments/
+|   |-- configs/
+|   |-- results/
+|
+|-- dashboard/
+|
+|-- scripts/
+|
+|-- docs/
+|
+|-- Dockerfile
+|-- docker-compose.yml
+|-- requirements.txt
+|-- .env.example
+|-- .gitignore
+|-- README.md
+|-- PROJECT_PLAN.md
+|-- AI_WORKFLOW.md
 ```
 
-## Integration Tests
+This is a target structure, not a requirement to restructure existing code unnecessarily. Preserve working modules and existing interfaces unless a specific change is needed and justified.
 
-Test communication between services.
-
-```text
-Data Collector
-      ↓
-Database
-      ↓
-Arbitrage Engine
-      ↓
-ML Service
-      ↓
-Simulation
-```
-
-## API Tests
-
-* [ ] Valid request
-* [ ] Invalid request
-* [ ] Authentication
-* [ ] Error handling
-* [ ] Response validation
-
-## Failure Tests
-
-* [ ] Service crash
-* [ ] Database failure
-* [ ] Network failure
-* [ ] Exchange disconnection
+Large raw datasets and generated model files should not automatically be committed to Git. Use appropriate sample data, external storage, or documented data-generation steps.
 
 ---
 
-# 26. Phase 19 — Performance Testing
+## 28. AI-Assisted Development Workflow
 
-The system will be tested under increasing data load.
+AI tools may be used to assist with coding, debugging, testing, documentation, and reviewing architecture.
 
-Measure:
+AI-generated code must not be accepted without understanding and testing it.
 
-* Processing latency
-* API latency
-* Memory usage
-* CPU usage
-* Database performance
-* Redis performance
-* Number of opportunities processed
+### Required Workflow
 
-Example:
+1. Inspect the current repository and relevant files.
+2. Read the project plan and existing interfaces.
+3. Identify the specific problem or task.
+4. Explain the proposed change before making broad modifications.
+5. Make the smallest coherent change.
+6. Add or update tests.
+7. Run the relevant tests and checks.
+8. Review the diff for unintended changes.
+9. Update documentation when behavior or interfaces change.
+10. Commit a working and understandable state.
 
-```text
-100 events/sec
-       ↓
-500 events/sec
-       ↓
-1000 events/sec
-       ↓
-Measure system behavior
-```
+### AI Development Rules
 
-The objective is to identify bottlenecks rather than assume that the system scales automatically.
+- Do not rewrite the project architecture without explicit justification.
+- Do not replace existing working implementations merely for stylistic reasons.
+- Do not invent functions, files, schemas, or dependencies without checking the repository.
+- Do not claim that tests passed unless they were actually executed.
+- Do not hide failing tests or silently weaken validation.
+- Do not introduce real-trading functionality.
+- Do not place credentials in source code.
+- Do not label an opportunity profitable solely because its gross spread is positive.
+- Do not reject negative spreads as invalid solely because they are negative.
+- Do not use future data as an ML feature.
+- Explain unfamiliar concepts and important implementation decisions.
+- Keep each task small enough to review and test.
+- If a change conflicts with the plan, explain the conflict before proceeding.
 
----
-
-# 27. Phase 20 — Local Production-Like Environment
-
-Before AWS deployment:
-
-```text
-Docker Compose
-      ↓
-All Services
-      ↓
-Security Configuration
-      ↓
-Health Checks
-      ↓
-Logging
-      ↓
-Monitoring
-      ↓
-Load Testing
-```
-
-The complete application should run locally without manually starting every service.
+The separate `AI_WORKFLOW.md` file should contain the detailed instructions intended to be used repeatedly with coding assistants.
 
 ---
 
-# 28. Phase 21 — AWS Cloud Deployment
+## 29. Development Phases
 
-After successful local testing, deploy the system to AWS.
+Development will proceed incrementally. The order below defines the main dependencies, while allowing small independent tasks to proceed in parallel.
 
-Conceptual architecture:
+### Phase 0 — Repository and Development Standards
 
-```text
-                         AWS
-                          │
-                     Internet
-                          │
-                    HTTPS / TLS
-                          │
-                 Application Load
-                    Balancer
-                          │
-                    FastAPI/API
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-            ECS/EC2     ECS/EC2     ECS/EC2
-              │           │           │
-              └───────────┼───────────┘
-                          │
-                  Private Services
-                          │
-             ┌────────────┼────────────┐
-             ▼            ▼            ▼
-            RDS         Redis       Time-Series
-         PostgreSQL    Cache        Storage
-```
+Tasks:
 
-The exact AWS service selection will depend on:
+- [ ] Confirm the repository structure.
+- [ ] Configure the Python environment.
+- [ ] Add or review `.gitignore`.
+- [ ] Add `.env.example`.
+- [ ] Establish dependency management.
+- [ ] Establish logging and configuration conventions.
+- [ ] Add an initial README.
+- [ ] Review the existing code before restructuring.
 
-* Cost
-* Complexity
-* Project requirements
-* Expected workload
-* Educational value
-* Operational requirements
+**Completion criteria:** The project can be set up locally using documented instructions, and secrets and generated data are excluded from version control.
 
----
+### Phase 1 — Market Data Contract and Collector Pilot
 
-# 29. AWS Security
+Tasks:
 
-AWS deployment will include:
+- [ ] Define the normalized market-data schema.
+- [ ] Verify public REST and WebSocket interfaces.
+- [ ] Implement the BTC/USDT collector.
+- [ ] Capture bid/ask prices and quantities.
+- [ ] Record exchange event and local receive timestamps.
+- [ ] Add reconnect and error handling.
+- [ ] Validate incoming data.
+- [ ] Run the 3–7 day pilot.
+- [ ] Measure message frequency, gaps, storage, and data quality.
+- [ ] Document available historical data sources and limitations.
 
-* [ ] IAM
-* [ ] VPC
-* [ ] Security Groups
-* [ ] Private database
-* [ ] HTTPS
-* [ ] Secrets management
-* [ ] Least privilege
-* [ ] Restricted ports
-* [ ] CloudWatch logging
-* [ ] Monitoring
+**Completion criteria:** The collector produces validated records, and the pilot provides sufficient evidence to choose the next collection and retention settings.
 
-Public access should be limited to the necessary application entry points.
+### Phase 2 — Storage and Data Quality
 
----
+Tasks:
 
-# 30. AWS Scalability
+- [ ] Set up InfluxDB for appropriate time-series data.
+- [ ] Set up PostgreSQL for structured research and application records.
+- [ ] Set up Redis for latest values and caching where needed.
+- [ ] Persist normalized market data.
+- [ ] Define retention and cleanup policies.
+- [ ] Add data-quality metrics.
+- [ ] Test restart and recovery behavior.
+- [ ] Verify timestamp consistency.
 
-If the application requires scaling:
+**Completion criteria:** Market observations can be stored and retrieved consistently, with documented data-quality behavior.
 
-```text
-              Load Balancer
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-     Instance     Instance     Instance
-        │           │           │
-        └───────────┼───────────┘
-                    │
-               Shared Data
-```
+### Phase 3 — Arbitrage Engine and Financial Calculations
 
-The application services should be designed to be as stateless as practical.
+Tasks:
 
-State that must survive container replacement should be stored in appropriate persistent systems.
+- [ ] Implement cross-exchange candidate detection.
+- [ ] Implement order-book walking.
+- [ ] Implement gross spread calculations.
+- [ ] Implement configurable transaction fees.
+- [ ] Implement slippage estimation.
+- [ ] Implement the documented latency-cost approximation.
+- [ ] Calculate estimated net profit.
+- [ ] Distinguish candidates from net-profitable candidates.
+- [ ] Permit valid negative spread values.
+- [ ] Add tests for negative spread, positive gross but negative net profit, and insufficient depth.
 
----
+**Completion criteria:** Candidate and cost calculations pass unit tests and use consistent definitions.
 
-# 31. Cloud Monitoring
+### Phase 4 — Dataset Generation and Target Definition
 
-AWS monitoring may use:
+Tasks:
 
-* CloudWatch Logs
-* CloudWatch Metrics
-* Health checks
-* Application logs
-* Container metrics
+- [ ] Define the unit of observation.
+- [ ] Define the simulated outcome horizon and execution assumptions.
+- [ ] Define the binary target label.
+- [ ] Build the initial feature pipeline.
+- [ ] Include both profitable and unprofitable candidates.
+- [ ] Include non-opportunity periods where useful.
+- [ ] Validate timestamp ordering.
+- [ ] Check for future-data leakage.
+- [ ] Create reproducible dataset-generation scripts.
+- [ ] Document dataset coverage and limitations.
 
-Monitor:
+**Completion criteria:** A reproducible dataset can be generated, and its features and labels have clear, testable definitions.
 
-```text
-CPU
-Memory
-Requests
-Errors
-Latency
-Container Health
-Database Health
-Service Availability
-```
+### Phase 5 — Rule-Based Baselines
 
----
+Tasks:
 
-# 32. Cost Control
+- [ ] Implement the gross-spread baseline.
+- [ ] Implement the fee-aware baseline.
+- [ ] Implement the cost-aware baseline.
+- [ ] Define common candidate and execution assumptions.
+- [ ] Generate baseline evaluation reports.
+- [ ] Verify that all methods use comparable data.
 
-Because this is an educational project, cloud cost must be controlled.
+**Completion criteria:** The project can evaluate candidates without ML and produce a reproducible baseline report.
 
-Before deployment:
+### Phase 6 — Simulation and Backtesting Engine
 
-* [ ] Estimate AWS costs
-* [ ] Identify free/low-cost options where applicable
-* [ ] Set billing alerts
-* [ ] Avoid unnecessary always-on resources
-* [ ] Shut down unused environments
-* [ ] Monitor resource utilization
+Tasks:
 
-The project should not assume that cloud services are free.
+- [ ] Implement chronological market-data replay.
+- [ ] Implement simulated candidate selection.
+- [ ] Apply fees and documented cost assumptions.
+- [ ] Apply supported latency and staleness scenarios.
+- [ ] Implement the virtual portfolio.
+- [ ] Calculate net simulated P&L.
+- [ ] Record simulated decisions and trades.
+- [ ] Save backtest configurations and results.
+- [ ] Test chronological correctness and reproducibility.
 
----
+**Completion criteria:** Rule-based methods can be evaluated through a repeatable simulation pipeline.
 
-# 33. Git & Version Control
+### Phase 7 — ML Models and Evaluation
 
-Use Git throughout development.
+Tasks:
 
-Recommended workflow:
+- [ ] Implement Logistic Regression.
+- [ ] Implement Random Forest.
+- [ ] Implement Gradient Boosting.
+- [ ] Define chronological training, validation, and test periods.
+- [ ] Tune models using training and validation data only.
+- [ ] Evaluate classification metrics.
+- [ ] Evaluate simulated performance using the same simulation policy.
+- [ ] Compare ML against all rule-based baselines.
+- [ ] Save model versions and experiment metadata.
+- [ ] Document cases where ML does not improve results.
 
-```text
-main
- │
- ├── develop
- │
- ├── feature/data-collector
- │
- ├── feature/arbitrage-engine
- │
- ├── feature/ml-service
- │
- └── feature/simulation
-```
+**Completion criteria:** Model performance and simulated outcomes can be compared fairly with rule-based methods, without data leakage.
 
-Commit examples:
+### Phase 8 — Research Experiments and Reporting
 
-```text
-feat: add Binance websocket collector
-feat: add arbitrage calculation
-feat: add ML prediction service
-feat: add simulation engine
-feat: dockerize services
-fix: handle websocket reconnect
-test: add arbitrage unit tests
-docs: update architecture
-```
+Tasks:
 
----
+- [ ] Compare gross spread with net simulated profitability.
+- [ ] Run data-staleness experiments.
+- [ ] Run supported simulated-latency experiments.
+- [ ] Compare rule-based and ML-filtered results.
+- [ ] Run feature-ablation experiments where sufficient data exists.
+- [ ] Evaluate across chronological periods.
+- [ ] Produce tables and plots.
+- [ ] Document assumptions, limitations, and results.
+- [ ] Complete the literature review before making novelty claims.
 
-# 34. Documentation
+**Completion criteria:** Results directly address the research question and can be reproduced from saved configurations.
 
-The project should contain:
+### Phase 9 — API and Dashboard Integration
 
-```text
-README.md
-PROJECT_PLAN.md
-ARCHITECTURE.md
-API.md
-DATABASE.md
-SECURITY.md
-TESTING.md
-DEPLOYMENT.md
-```
+Tasks:
 
-Documentation should explain both:
+- [ ] Implement health and status endpoints.
+- [ ] Implement market-data endpoints.
+- [ ] Implement opportunity endpoints.
+- [ ] Implement prediction endpoints.
+- [ ] Implement portfolio and performance endpoints.
+- [ ] Add backtest submission and result retrieval.
+- [ ] Connect the dashboard to the relevant data sources.
+- [ ] Display simulated values clearly.
+- [ ] Add integration tests.
 
-1. How the system works
-2. Why architectural decisions were made
+**Completion criteria:** The system exposes its results through a documented API and a usable monitoring dashboard.
 
----
+### Phase 10 — Docker Integration and Hardening
 
-# 35. Final Project Architecture
+Tasks:
 
-The intended final architecture is:
+- [ ] Build service containers.
+- [ ] Configure Docker Compose.
+- [ ] Configure health checks and dependencies.
+- [ ] Add persistent storage.
+- [ ] Verify service-to-service communication.
+- [ ] Verify startup, shutdown, and restart behavior.
+- [ ] Run unit and integration tests.
+- [ ] Review security and dependency configuration.
+- [ ] Document the complete local startup workflow.
 
-```text
-                           ☁️ AWS CLOUD
-                                │
-                         HTTPS / TLS
-                                │
-                         Load Balancer
-                                │
-                           FastAPI API
-                                │
-          ┌─────────────────────┼─────────────────────┐
-          │                     │                     │
-          ▼                     ▼                     ▼
-   Data Collector       Arbitrage Engine        ML Service
-          │                     │                     │
-          │                     └──────────┬──────────┘
-          │                                │
-          ▼                                ▼
-       Redis                        Simulation Engine
-          │                                │
-          │                    ┌───────────┴───────────┐
-          │                    ▼                       ▼
-          │               PostgreSQL               InfluxDB
-          │                    │                       │
-          └────────────────────┼───────────────────────┘
-                               ▼
-                         Dashboard / Grafana
+**Completion criteria:** The local platform can be started, tested, and operated using documented container workflows.
 
+### Phase 11 — AWS Preparation and Deployment
 
-                      🔐 SECURITY
-        ┌──────────────────────────────────────┐
-        │ IAM                                  │
-        │ Least Privilege                      │
-        │ VPC / Security Groups                │
-        │ HTTPS / TLS                          │
-        │ Secrets Management                   │
-        │ Authentication                       │
-        │ Input Validation                     │
-        │ Private Databases                    │
-        │ Container Security                   │
-        │ Logging                              │
-        │ Monitoring                           │
-        │ No Real Trading Permissions          │
-        └──────────────────────────────────────┘
-```
+AWS deployment should happen after the local system works reliably and the expected costs are understood.
+
+Potential services:
+
+- EC2 or ECS for application workloads.
+- Application Load Balancer if required.
+- VPC and private networking.
+- IAM for least-privilege access.
+- CloudWatch for logs and monitoring.
+- RDS for managed relational storage if justified.
+- ElastiCache for managed Redis if justified.
+- Appropriate storage for time-series data and historical records.
+
+Tasks:
+
+- [ ] Select a deployment architecture based on actual requirements.
+- [ ] Estimate ongoing and variable costs.
+- [ ] Configure billing alerts and budgets.
+- [ ] Configure IAM and network security.
+- [ ] Keep databases private where possible.
+- [ ] Store secrets securely.
+- [ ] Deploy a minimal environment first.
+- [ ] Verify health checks, logs, and recovery behavior.
+- [ ] Confirm that resources can be stopped or deleted safely.
+- [ ] Document deployment and cleanup procedures.
+
+**Completion criteria:** The application can be deployed to AWS with documented security controls, cost assumptions, and cleanup steps.
+
+AWS managed services are options, not mandatory components. Avoid deploying every service to AWS unless it provides a clear benefit.
 
 ---
 
-# 36. Final Development Order
+## 30. Project Milestones
 
-The actual implementation order should be:
+| Milestone | Expected Result |
+|---|---|
+| M1 | Repository and development standards are ready |
+| M2 | BTC/USDT data-collection pilot is validated |
+| M3 | Market data is standardized and stored |
+| M4 | Arbitrage calculations pass financial tests |
+| M5 | Dataset and target definition are reproducible |
+| M6 | Rule-based baselines are available |
+| M7 | Simulation and backtesting work end to end |
+| M8 | ML models are evaluated against the baselines |
+| M9 | Research experiments and reports are complete |
+| M10 | API and dashboard are integrated |
+| M11 | Local Docker deployment is reliable |
+| M12 | AWS deployment is prepared and cost-controlled |
 
-```text
-1.  Project structure
-        ↓
-2.  Data Collector
-        ↓
-3.  Data Standardization
-        ↓
-4.  InfluxDB / PostgreSQL / Redis
-        ↓
-5.  Arbitrage Engine
-        ↓
-6.  Feature Engineering
-        ↓
-7.  ML Service
-        ↓
-8.  Simulation Engine
-        ↓
-9.  Backtesting
-        ↓
-10. Paper Trading
-        ↓
-11. FastAPI
-        ↓
-12. Dashboard
-        ↓
-13. Dockerization
-        ↓
-14. Service Integration
-        ↓
-15. Security Hardening
-        ↓
-16. Fault Tolerance
-        ↓
-17. Logging & Monitoring
-        ↓
-18. Testing
-        ↓
-19. Performance Testing
-        ↓
-20. Local Production-Like Environment
-        ↓
-21. AWS Deployment
-        ↓
-22. AWS Security
-        ↓
-23. AWS Monitoring
-        ↓
-24. Cloud Scalability Testing
-        ↓
-25. Final Documentation
-```
+The milestones are outcome-based. They should not be considered complete merely because a file or class has been created.
 
 ---
 
-# 37. Definition of Done
+## 31. Success Criteria
 
-The project will be considered complete when:
+The project will be considered successful when:
 
-## Core System
+- Market data can be collected and validated consistently.
+- Exchange data is represented using a common schema.
+- Data staleness and simulated latency are recorded separately.
+- Cross-exchange candidates are calculated correctly.
+- Negative spreads are represented as valid unprofitable outcomes.
+- Fees and slippage are applied consistently.
+- Insufficient liquidity is handled without inventing prices or quantities.
+- The dataset has a documented target and no known future-data leakage.
+- Rule-based baselines and ML models can be compared fairly.
+- Backtests are reproducible.
+- Results include net simulated performance, not just gross spread or classification accuracy.
+- Research assumptions and limitations are documented.
+- The services can be tested and run locally using Docker.
+- Security and cloud-cost controls are documented before AWS deployment.
 
-* [ ] Multiple exchanges can provide market data
-* [ ] Data is standardized
-* [ ] Market data is stored
-* [ ] Arbitrage opportunities are detected
-* [ ] Fees are considered
-* [ ] Slippage is considered
-* [ ] Latency is considered
-* [ ] ML predictions are generated
-* [ ] Virtual trades are simulated
-* [ ] Backtesting works
-* [ ] Paper trading works
-
-## Architecture
-
-* [ ] Services are separated
-* [ ] Services communicate correctly
-* [ ] Docker Compose starts the system
-* [ ] Services have health checks
-* [ ] Failed services can recover where appropriate
-
-## Security
-
-* [ ] No secrets in source code
-* [ ] `.env` excluded from Git
-* [ ] API authentication implemented where required
-* [ ] Input validation implemented
-* [ ] Database access restricted
-* [ ] Containers hardened
-* [ ] AWS IAM follows least privilege
-* [ ] Security Groups restrict traffic
-* [ ] HTTPS is enabled in cloud deployment
-* [ ] No real trading permissions are used
-
-## Monitoring
-
-* [ ] Logs are available
-* [ ] Service health is monitored
-* [ ] Errors are logged
-* [ ] Cloud monitoring is configured
-* [ ] Important application metrics are visible
-
-## Cloud
-
-* [ ] Application can be deployed to AWS
-* [ ] Containers run successfully
-* [ ] Database is accessible privately
-* [ ] Load balancing works where applicable
-* [ ] AWS costs are monitored
-* [ ] Unused resources can be stopped/removed
-
-## Documentation
-
-* [ ] Architecture documented
-* [ ] API documented
-* [ ] Database documented
-* [ ] Security documented
-* [ ] Testing documented
-* [ ] Deployment documented
-* [ ] Final results documented
+ML improvement is not a required outcome. A well-supported finding that ML does not improve on the cost-aware baseline is also a valid research result.
 
 ---
 
-# 38. Project Principle
+## 32. Key Risks and Mitigations
 
-The project should be developed according to the following principle:
+### Data Availability
 
-> **Build the core system first, but design every component so that it can operate as a containerized, secure and cloud-deployable service.**
+**Risk:** Historical tick or order-book data may be unavailable, restricted, or too expensive to retain.
 
-The system should therefore not be written as one large Python application and divided into services at the end.
+**Mitigation:** Verify sources early, run a small pilot, and use a clearly documented combination of historical and live data.
 
-Instead:
+### Data Quality
 
-```text
-Service boundaries
-        ↓
-Clear interfaces
-        ↓
-Independent development
-        ↓
-Docker containers
-        ↓
-Local integration
-        ↓
-Security
-        ↓
-Testing
-        ↓
-Cloud deployment
-```
+**Risk:** Missing, stale, or inconsistent order-book updates can create false candidates.
 
-This approach allows the project to demonstrate not only an arbitrage/ML algorithm, but also practical knowledge of:
+**Mitigation:** Validate data, track gaps, record timestamps, and reject or flag invalid observations.
 
-* Software architecture
-* Python development
-* REST APIs
-* WebSockets
-* Databases
-* Machine Learning
-* Docker
-* Microservices
-* Networking
-* Security
-* Monitoring
-* AWS Cloud
-* DevOps
-* Testing
-* Scalability
+### Simulation Realism
 
----
+**Risk:** Simulated trades may overestimate achievable real-world profitability.
 
-# 39. First Implementation Target
+**Mitigation:** Document execution assumptions, model costs consistently, and avoid presenting results as real trading performance.
 
-The first milestone is intentionally small.
+### Data Leakage
 
-```text
-Binance
-   │
-   ▼
-Data Collector
-   │
-   ▼
-Standardized Market Data
-   │
-   ▼
-Redis / InfluxDB
-   │
-   ▼
-Basic Arbitrage Detector
-   │
-   ▼
-Console Output
-```
+**Risk:** Future observations may accidentally enter model features or influence model selection.
 
-Only after this pipeline works reliably should additional exchanges, ML, simulation and cloud infrastructure be added.
+**Mitigation:** Use chronological splits, feature-availability checks, and separate test periods.
 
-This prevents the project from becoming unnecessarily complex before the fundamental data flow is proven.
+### Class Imbalance
+
+**Risk:** Profitable candidates may be much less common than unprofitable candidates.
+
+**Mitigation:** Report precision, recall, F1, and PR-AUC where appropriate. Do not rely on accuracy alone.
+
+### Overfitting
+
+**Risk:** Model thresholds or strategy rules may fit one market period.
+
+**Mitigation:** Use chronological validation, a held-out test period, and walk-forward evaluation where practical.
+
+### Cloud Costs
+
+**Risk:** Unnecessary compute, networking, or managed storage may create unexpected charges.
+
+**Mitigation:** Complete local development first, configure billing alerts, choose services carefully, and document resource cleanup.
+
+### Scope Expansion
+
+**Risk:** Adding too many services, models, exchanges, or deployment features can delay a working research pipeline.
+
+**Mitigation:** Follow the development phases, validate BTC/USDT first, and expand only after the current milestone meets its completion criteria.
 
 ---
 
-# 40. Milestone Tracking
+## 33. Documentation Requirements
 
-## Milestone 1 — Data
+The repository should include:
 
-* [ ] Binance connection
-* [ ] Market data received
-* [ ] Data standardized
-* [ ] Data stored
+- `README.md`: project purpose, setup, architecture, and local run instructions.
+- `PROJECT_PLAN.md`: this development and research plan.
+- `AI_WORKFLOW.md`: rules for AI-assisted development.
+- `.env.example`: configuration placeholders without secrets.
+- Architecture documentation: service responsibilities and data flow.
+- Data documentation: schema, sources, timestamps, and retention.
+- Experiment documentation: target definitions, model configurations, and evaluation assumptions.
+- Deployment documentation: local Docker and eventual AWS deployment.
+- Results documentation: reproducible experiment outputs and limitations.
 
-## Milestone 2 — Arbitrage
-
-* [ ] Multiple exchanges
-* [ ] Spread calculation
-* [ ] Fee calculation
-* [ ] Slippage model
-* [ ] Net opportunity calculation
-
-## Milestone 3 — ML
-
-* [ ] Dataset
-* [ ] Features
-* [ ] Logistic Regression
-* [ ] Random Forest
-* [ ] Gradient Boosting
-* [ ] Evaluation
-
-## Milestone 4 — Simulation
-
-* [ ] Virtual wallet
-* [ ] Simulated orders
-* [ ] P&L
-* [ ] Backtesting
-* [ ] Paper trading
-
-## Milestone 5 — Platform
-
-* [ ] FastAPI
-* [ ] Dashboard
-* [ ] Docker Compose
-* [ ] Service integration
-
-## Milestone 6 — Production Readiness
-
-* [ ] Security
-* [ ] Health checks
-* [ ] Fault tolerance
-* [ ] Logging
-* [ ] Monitoring
-* [ ] Performance tests
-
-## Milestone 7 — Cloud
-
-* [ ] AWS networking
-* [ ] Container deployment
-* [ ] Database deployment
-* [ ] HTTPS
-* [ ] IAM
-* [ ] Monitoring
-* [ ] Cost control
-* [ ] Cloud testing
+Documentation must be updated when an implementation change alters behavior, configuration, interfaces, or research assumptions.
 
 ---
 
-# End Goal
+## 34. Definition of Done
 
-```text
-                 PUBLIC MARKET DATA
-                         │
-                         ▼
-                  DATA COLLECTORS
-                         │
-                         ▼
-                 STANDARDIZATION
-                         │
-                         ▼
-              ┌──────────┴──────────┐
-              │                     │
-              ▼                     ▼
-           STORAGE             ARBITRAGE
-              │                     │
-              │                     ▼
-              │                 ML MODEL
-              │                     │
-              └──────────┬──────────┘
-                         ▼
-                  SIMULATION ENGINE
-                         │
-                         ▼
-                      P&L
-                         │
-                         ▼
-                    DASHBOARD
+A task is complete only when:
 
+1. The implementation meets the task's stated requirements.
+2. Relevant tests have been added or updated.
+3. Relevant tests have actually been run.
+4. The result has been reviewed for unintended changes.
+5. Configuration and security implications have been checked.
+6. Documentation has been updated when necessary.
+7. Remaining limitations are explicitly recorded.
 
-              ───────────────────────
-               Docker Containers
-              ───────────────────────
-                         │
-                         ▼
-                    AWS CLOUD
-                         │
-              ┌──────────┼──────────┐
-              │          │          │
-             IAM       Network    Monitoring
-              │          │          │
-              └──────────┼──────────┘
-                         ▼
-                  SECURE PLATFORM
-```
+A task must not be marked complete merely because AI-generated code looks correct or compiles.
 
-**The final system is a research and simulation platform, not a real trading bot.**
+---
+
+## 35. Final Development Principles
+
+The project must follow these principles throughout development:
+
+1. Simulation only; no real-money trading.
+2. Correct data and financial calculations take priority over model complexity.
+3. Negative spread is a valid economic outcome, not automatically invalid data.
+4. Market-data staleness and simulated execution latency are separate variables.
+5. Gross spread and net profitability must not be confused.
+6. ML must be evaluated against fair, reproducible rule-based baselines.
+7. Future information must not leak into model features.
+8. Experimental assumptions must be documented.
+9. Local functionality and testing come before AWS deployment.
+10. AI-assisted changes must be reviewed and tested.
+11. The architecture should remain modular without adding unnecessary complexity.
+12. Results must be reported honestly, including negative or inconclusive findings.
+
+The ultimate goal is to build a reliable, reproducible, containerized research platform that evaluates cross-exchange cryptocurrency arbitrage candidates under clearly defined market-data, cost, and execution assumptions.
