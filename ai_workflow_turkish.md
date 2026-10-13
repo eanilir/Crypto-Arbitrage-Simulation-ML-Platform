@@ -42,14 +42,16 @@
 - [x] Duplicate veri kontrolü ekle
 - [x] Collector loglarını standardize et
 - [x] Collector için unit test yaz
-- [ ] BTC/USDT için kontrollü veri toplama pilotunu yürüt
-- [ ] Exchange event timestamp ve local receive timestamp alanlarının anlamını doğrula
-- [ ] WebSocket veri kaybı, sequence gap ve reconnect davranışını gözlemle
-- [ ] Mesaj sıklığı, depolama büyümesi ve veri kalitesini ölç
-- [ ] Veri saklama ve retention politikasını ölçümlere göre belirle
-- [ ] Pilot sonuçlarını dokümante et
+- [x] BTC/USDT için kısa kontrollü veri toplama pilotunu yürüt
+- [x] Exchange event timestamp ve local receive timestamp alanlarının anlamını doğrula
+- [x] WebSocket veri kaybı, sequence gap ve reconnect davranışını gözlemle
+- [x] Mesaj sıklığı, depolama büyümesi ve veri kalitesini ölç
+- [x] Veri saklama ve retention politikası için geçici ölçüm temelli karar oluştur
+- [x] Pilot sonuçlarını dokümante et
 
 **Pilot planı:** Öncelikle BTC/USDT ile 3–7 günlük veri toplama denemesi yap. Sonuçlar yeterliyse ETH/USDT, XRP/USDT ve diğer borsalara yönelik kapsamı genişlet.
+
+**Pilot notu:** Kısa kontrollü pilot ve ölçüm aracı `docs/btc_usdt_pilot_report.md` içinde kaydedildi. 3–7 günlük kesintisiz üretim koşusu, kesin diff-depth sequence doğrulaması ve CPU/bellek ölçümü açık takip işidir.
 
 **Tamamlanma kriteri:** Collector yalnızca bağlantı kurmamalı; veri kalitesi, zaman damgaları, kopmalar ve depolama maliyeti açısından da değerlendirilmiş olmalı.
 

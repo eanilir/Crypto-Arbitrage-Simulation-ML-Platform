@@ -1491,9 +1491,11 @@ Tasks:
 - [ ] Record exchange event and local receive timestamps.
 - [ ] Add reconnect and error handling.
 - [ ] Validate incoming data.
-- [ ] Run the 3–7 day pilot.
-- [ ] Measure message frequency, gaps, storage, and data quality.
+- [x] Run a short controlled BTC/USDT pilot; schedule the 3–7 day production run.
+- [x] Measure message frequency, gaps, storage, and data quality for the short pilot.
 - [ ] Document available historical data sources and limitations.
+
+The short pilot results and its limitations are documented in `docs/btc_usdt_pilot_report.md`. The 3–7 day production run remains required before expanding the collection workload.
 
 **Completion criteria:** The collector produces validated records, and the pilot provides sufficient evidence to choose the next collection and retention settings.
 
