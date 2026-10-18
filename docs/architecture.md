@@ -57,7 +57,7 @@ features, leakage rules) and `backtest.py` (execution assumptions). They are sum
 ## Known gaps versus the plan
 
 - Market data is persisted to files, not InfluxDB/PostgreSQL/Redis. Schema and containers exist
-  (`infrastructure/postgres/init.sql`, `docker-compose.yml` `storage` profile) but no code writes
+  (`infrastructure/supabase/schema.sql`, `docker-compose.yml` `storage` profile) but no code writes
   to them yet.
 - No WebSocket depth feed; the recorder polls REST snapshots (see [data.md](data.md)).
 - Docker files were written and statically checked but never run on the development machine.

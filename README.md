@@ -60,7 +60,7 @@ shared/                domain models, order books, market data loading, syntheti
                        data quality, retention, storage schema
 experiments/           run_experiments.py and results/
 scripts/               dataset, synthetic data, quality report, retention, health check
-infrastructure/        postgres init.sql, grafana provisioning
+infrastructure/        supabase/schema.sql (report's ER schema), grafana provisioning
 tests/                 unit, integration-style and static infrastructure tests
 docs/                  architecture, data, experiments, deployment, AWS plan, literature review
 ```
