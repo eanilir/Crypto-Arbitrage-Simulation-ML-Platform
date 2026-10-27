@@ -71,3 +71,47 @@ alter table arbitrage_opportunity enable row level security;
 alter table model_registry        enable row level security;
 alter table ml_prediction         enable row level security;
 alter table simulation_result     enable row level security;
+
+-- ---------------------------------------------------------------------------------------------
+-- Users and login (the report's use cases require "valid credentials"; the ER diagram has no
+-- user table, so APP_USER is an addition). Passwords are stored only as bcrypt hashes.
+-- The dashboard never reads this table: it calls verify_login(), which returns the user's
+-- name on success and null on failure (a failed attempt waits 1 s to slow down guessing).
+-- ---------------------------------------------------------------------------------------------
+create extension if not exists pgcrypto with schema extensions;
+
+create table if not exists app_user (
+    id            uuid primary key default gen_random_uuid(),
+    username      text not null unique check (username = lower(username) and length(username) between 3 and 40),
+    display_name  text,
+    password_hash text not null,
+    created_at    timestamptz not null default now(),
+    last_login_at timestamptz
+);
+
+alter table app_user enable row level security;
+
+create or replace function verify_login(p_username text, p_password text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+    u app_user%rowtype;
+begin
+    select * into u from app_user where username = lower(trim(p_username));
+    if found and u.password_hash = crypt(p_password, u.password_hash) then
+        update app_user set last_login_at = now() where id = u.id;
+        return jsonb_build_object('username', u.username, 'display_name', coalesce(u.display_name, u.username));
+    end if;
+    perform pg_sleep(1);
+    return null;
+end;
+$$;
+
+-- Public (anon) clients may only call verify_login; they get no direct table access at all.
+revoke all on table price_tick, arbitrage_opportunity, model_registry, ml_prediction,
+    simulation_result, app_user from anon, authenticated;
+revoke all on function verify_login(text, text) from public;
+grant execute on function verify_login(text, text) to anon, authenticated;

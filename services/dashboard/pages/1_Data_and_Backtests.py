@@ -11,6 +11,8 @@ import streamlit as st
 # Make `shared` and `services` importable no matter where streamlit is launched from.
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
+from services.dashboard.auth import require_login  # noqa: E402
+from services.dashboard.balance import show_balance_badge  # noqa: E402
 from shared.data_quality import analyze  # noqa: E402
 
 DATA_ROOT = Path(os.getenv("ARBITRAGE_DATA_ROOT", "data/raw"))
@@ -18,6 +20,7 @@ BACKTEST_DIR = Path(os.getenv("ARBITRAGE_BACKTEST_DIR", "experiments/results/api
 RESULTS_DIR = Path(os.getenv("ARBITRAGE_RESULTS_DIR", "experiments/results"))
 
 st.set_page_config(page_title="Data and backtests", layout="wide")
+require_login()
 st.title("Data collection health and backtests")
 st.warning("All profit figures here are SIMULATED. No orders are placed and no real funds are used.")
 
@@ -81,6 +84,16 @@ else:
     run = st.selectbox("Run", runs, format_func=lambda p: p.name)
     metrics = json.loads((run / "metrics.json").read_text(encoding="utf-8"))
     config = json.loads((run / "config.json").read_text(encoding="utf-8"))
+    final_quote = metrics["final_quote_balances"]
+    start_quote = config["config"]["initial_quote_per_exchange"] * len(final_quote)
+    end_quote = sum(final_quote.values())
+    final_base = metrics["final_base_balances"]
+    start_base = config["config"]["initial_base_per_exchange"] * len(final_base)
+    show_balance_badge(
+        end_quote, end_quote - start_quote, sum(final_base.values()),
+        f"Sanal bakiye (simülasyon). Başlangıç: $ {start_quote:,.2f} ve {start_base:,.4f} BTC, "
+        f"{len(final_quote)} borsaya eşit dağıtılmış. Gerçek para değildir.",
+    )
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Net simulated P&L", f"{metrics['total_net_pnl']:,.2f}")
     m2.metric("Trades", metrics["trades"])

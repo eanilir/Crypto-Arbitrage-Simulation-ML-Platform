@@ -55,3 +55,5 @@ def test_page_shows_quality_metrics_and_backtest_results(tmp_path, monkeypatch) 
     assert not app.exception
     labels = [m.label for m in app.metric]
     assert "Records" in labels and "Net simulated P&L" in labels
+    badges = [m.value for m in app.markdown if "balance-badge" in m.value]
+    assert badges and "BTC" in badges[0]
