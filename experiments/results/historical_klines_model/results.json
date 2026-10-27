@@ -1,0 +1,252 @@
+[
+  {
+    "cost_bps_round_trip": 1.0,
+    "rows": {
+      "train": 158074,
+      "validation": 52691,
+      "test": 52692
+    },
+    "positives": {
+      "train": 57391,
+      "validation": 16135,
+      "test": 16744
+    },
+    "period": {
+      "start": "2026-04-14T11:03:00+00:00",
+      "end": "2026-10-14T10:01:00+00:00"
+    },
+    "test_results": {
+      "rule_persistence (gap now > cost)": {
+        "selected": 16744,
+        "precision": 0.4747372193024367,
+        "recall": 0.4747372193024367,
+        "pr_auc": 0.48410688388291523,
+        "upper_bound_pnl_per_10k": 344.8841239155287,
+        "positives_in_period": 16744
+      },
+      "logistic_regression": {
+        "selected": 9572,
+        "precision": 0.6146050982030924,
+        "recall": 0.35134973721930246,
+        "pr_auc": 0.5574107420177769,
+        "upper_bound_pnl_per_10k": 1910.8305693528087,
+        "positives_in_period": 16744,
+        "threshold": 0.6
+      },
+      "random_forest": {
+        "selected": 9149,
+        "precision": 0.6254235435566728,
+        "recall": 0.3417343526039178,
+        "pr_auc": 0.5643930604109317,
+        "upper_bound_pnl_per_10k": 1922.0142846628523,
+        "positives_in_period": 16744,
+        "threshold": 0.6
+      },
+      "gradient_boosting": {
+        "selected": 10318,
+        "precision": 0.6067067261097112,
+        "recall": 0.373865265169613,
+        "pr_auc": 0.5666026027521994,
+        "upper_bound_pnl_per_10k": 1899.370191698993,
+        "positives_in_period": 16744,
+        "threshold": 0.45
+      },
+      "trade_never": {
+        "selected": 0,
+        "upper_bound_pnl_per_10k": 0.0
+      }
+    }
+  },
+  {
+    "cost_bps_round_trip": 2.0,
+    "rows": {
+      "train": 158074,
+      "validation": 52691,
+      "test": 52692
+    },
+    "positives": {
+      "train": 4760,
+      "validation": 1097,
+      "test": 1044
+    },
+    "period": {
+      "start": "2026-04-14T11:03:00+00:00",
+      "end": "2026-10-14T10:01:00+00:00"
+    },
+    "test_results": {
+      "rule_persistence (gap now > cost)": {
+        "selected": 1044,
+        "precision": 0.27586206896551724,
+        "recall": 0.27586206896551724,
+        "pr_auc": 0.20239392711335047,
+        "upper_bound_pnl_per_10k": -409.2847669138368,
+        "positives_in_period": 1044
+      },
+      "logistic_regression": {
+        "selected": 51,
+        "precision": 0.7450980392156863,
+        "recall": 0.03639846743295019,
+        "pr_auc": 0.2821189730477855,
+        "upper_bound_pnl_per_10k": 35.956244693340224,
+        "positives_in_period": 1044,
+        "threshold": 0.9978
+      },
+      "random_forest": {
+        "selected": 216,
+        "precision": 0.6666666666666666,
+        "recall": 0.13793103448275862,
+        "pr_auc": 0.28599830777001084,
+        "upper_bound_pnl_per_10k": 85.02992825026995,
+        "positives_in_period": 1044,
+        "threshold": 0.95
+      },
+      "gradient_boosting": {
+        "selected": 201,
+        "precision": 0.7114427860696517,
+        "recall": 0.13697318007662834,
+        "pr_auc": 0.2960857197639797,
+        "upper_bound_pnl_per_10k": 103.59278756566516,
+        "positives_in_period": 1044,
+        "threshold": 0.6
+      },
+      "trade_never": {
+        "selected": 0,
+        "upper_bound_pnl_per_10k": 0.0
+      }
+    }
+  },
+  {
+    "cost_bps_round_trip": 3.0,
+    "rows": {
+      "train": 158074,
+      "validation": 52691,
+      "test": 52692
+    },
+    "positives": {
+      "train": 600,
+      "validation": 110,
+      "test": 101
+    },
+    "period": {
+      "start": "2026-04-14T11:03:00+00:00",
+      "end": "2026-10-14T10:01:00+00:00"
+    },
+    "test_results": {
+      "rule_persistence (gap now > cost)": {
+        "selected": 101,
+        "precision": 0.26732673267326734,
+        "recall": 0.26732673267326734,
+        "pr_auc": 0.19451575174649433,
+        "upper_bound_pnl_per_10k": -55.54544827156788,
+        "positives_in_period": 101
+      },
+      "logistic_regression": {
+        "selected": 53,
+        "precision": 0.37735849056603776,
+        "recall": 0.19801980198019803,
+        "pr_auc": 0.22028950484595003,
+        "upper_bound_pnl_per_10k": -11.526145108395639,
+        "positives_in_period": 101,
+        "threshold": 0.9948
+      },
+      "random_forest": {
+        "selected": 29,
+        "precision": 0.3103448275862069,
+        "recall": 0.0891089108910891,
+        "pr_auc": 0.14135971205619813,
+        "upper_bound_pnl_per_10k": -10.014756205748022,
+        "positives_in_period": 101,
+        "threshold": 0.95
+      },
+      "gradient_boosting": {
+        "selected": 4,
+        "precision": 0.5,
+        "recall": 0.019801980198019802,
+        "pr_auc": 0.19092000885239824,
+        "upper_bound_pnl_per_10k": -0.30111599488423835,
+        "positives_in_period": 101,
+        "threshold": 0.7
+      },
+      "trade_never": {
+        "selected": 0,
+        "upper_bound_pnl_per_10k": 0.0
+      }
+    }
+  },
+  {
+    "cost_bps_round_trip": 5.0,
+    "rows": {
+      "train": 158074,
+      "validation": 52691,
+      "test": 52692
+    },
+    "positives": {
+      "train": 35,
+      "validation": 5,
+      "test": 8
+    },
+    "period": {
+      "start": "2026-04-14T11:03:00+00:00",
+      "end": "2026-10-14T10:01:00+00:00"
+    },
+    "test_results": {
+      "rule_persistence (gap now > cost)": {
+        "selected": 8,
+        "precision": 0.25,
+        "recall": 0.25,
+        "pr_auc": 0.23211222816844543,
+        "upper_bound_pnl_per_10k": -10.911236963126978,
+        "positives_in_period": 8
+      },
+      "logistic_regression": {
+        "selected": 0,
+        "precision": null,
+        "recall": 0.0,
+        "pr_auc": 0.017653805218515294,
+        "upper_bound_pnl_per_10k": 0.0,
+        "positives_in_period": 8,
+        "threshold": 1.0
+      },
+      "random_forest": {
+        "selected": 10,
+        "precision": 0.1,
+        "recall": 0.125,
+        "pr_auc": 0.03320865487574277,
+        "upper_bound_pnl_per_10k": -19.33463198781178,
+        "positives_in_period": 8,
+        "threshold": 0.55
+      },
+      "gradient_boosting": {
+        "selected": 14,
+        "precision": 0.0,
+        "recall": 0.0,
+        "pr_auc": 0.00021136670500050795,
+        "upper_bound_pnl_per_10k": -48.77441156109768,
+        "positives_in_period": 8,
+        "threshold": 0.85
+      },
+      "trade_never": {
+        "selected": 0,
+        "upper_bound_pnl_per_10k": 0.0
+      }
+    }
+  },
+  {
+    "cost_bps_round_trip": 20.0,
+    "rows": {
+      "train": 158074,
+      "validation": 52691,
+      "test": 52692
+    },
+    "positives": {
+      "train": 0,
+      "validation": 1,
+      "test": 0
+    },
+    "period": {
+      "start": "2026-04-14T11:03:00+00:00",
+      "end": "2026-10-14T10:01:00+00:00"
+    },
+    "skipped": "not enough positive examples (train 0, validation 1, test 0); a model cannot learn from this and any result would be noise"
+  }
+]

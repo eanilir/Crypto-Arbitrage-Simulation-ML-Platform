@@ -102,26 +102,11 @@ def test_env_example_has_placeholders_only_and_env_is_git_ignored() -> None:
     assert ".env" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 
 
-def test_init_sql_matches_python_schema_and_parses_as_postgres() -> None:
-    from shared.storage import FULL_POSTGRESQL_SCHEMA
-
-    sql = (ROOT / "infrastructure" / "postgres" / "init.sql").read_text(encoding="utf-8")
-    assert FULL_POSTGRESQL_SCHEMA.strip() in sql
-    sqlglot = pytest.importorskip("sqlglot")
-    statements = [s for s in sqlglot.parse(sql, read="postgres") if s is not None]
-    created = {
-        s.this.this.name for s in statements if s.key == "create" and s.args.get("kind") == "TABLE"
-    }
-    assert {
-        "model_versions",
-        "backtest_runs",
-        "candidate_opportunities",
-        "candidate_features",
-        "ml_predictions",
-        "simulated_trades",
-        "portfolio_snapshots",
-        "experiment_runs",
-    } <= created
+def test_compose_postgres_uses_the_report_schema_file() -> None:
+    mounts = SERVICES["postgres"]["volumes"]
+    assert any("infrastructure/supabase/schema.sql" in m for m in mounts)
+    assert (ROOT / "infrastructure" / "supabase" / "schema.sql").exists()
+    assert not (ROOT / "infrastructure" / "postgres").exists()  # old duplicate schema is gone
 
 
 def run_healthcheck(stats_path: Path) -> int:
