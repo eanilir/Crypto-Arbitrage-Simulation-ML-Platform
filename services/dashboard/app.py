@@ -20,6 +20,8 @@ from services.arbitrage_engine.app.candidates import (  # noqa: E402
     find_candidates,
     rank_by_net_profit,
 )
+from services.dashboard.auth import require_login  # noqa: E402
+from services.dashboard.balance import show_balance_badge  # noqa: E402
 from shared.domain.models import MarketQuote  # noqa: E402
 
 EXCHANGES = ["Binance", "Bybit", "Kraken", "Coinbase", "OKX"]
@@ -158,6 +160,7 @@ def find_opportunities(
 
 
 st.set_page_config(page_title="Crypto Arbitrage Simulation", layout="wide")
+require_login()
 st.title("Crypto Arbitrage Simulation")
 
 with st.sidebar:
@@ -165,6 +168,7 @@ with st.sidebar:
     live = st.radio("Data source", ["Live (public APIs)", "Simulated"]).startswith("Live")
     symbols = st.multiselect("Symbols", list(BASE_PRICES), default=list(BASE_PRICES))
     notional = st.number_input("Trade size (USDT)", 100.0, 1_000_000.0, 10_000.0, 500.0)
+    virtual_balance = st.number_input("Virtual balance (USDT)", 100.0, 100_000_000.0, 100_000.0, 1_000.0)
     latency_bps = st.slider("Latency cost (bps)", 0.0, 20.0, 1.0, 0.5)
     only_profitable = st.checkbox("Show only profitable routes", value=True)
     with st.expander("Taker fee per exchange (%)", expanded=True):
@@ -203,6 +207,12 @@ priced = [o for o in opps if not o.is_rejected]
 profitable = [o for o in opps if o.is_net_profitable]
 gross_positive = [o for o in opps if o.gross_spread is not None and o.gross_spread > 0]
 rejected = [o for o in opps if o.is_rejected]
+best_gain = priced[0].net_profit if priced and priced[0].is_net_profitable else 0.0
+show_balance_badge(
+    virtual_balance + best_gain, best_gain, None,
+    "Sanal bakiye (simülasyon). Değişim: bu anda net kârlı en iyi fırsat tek seferlik "
+    "uygulansaydı beklenen kazanç. Gerçek para değildir.",
+)
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Candidates scanned", len(opps))
 c2.metric("Gross-positive", len(gross_positive))
